@@ -6,6 +6,7 @@ import ExpandableText from '@/components/common/ExpandableText'
 import { useState } from 'react'
 import { ShareModal } from '@/components/shared/ShareModal'
 import { ContentData } from '@/hooks/useContentViewer'
+import { HashtagList } from '@/lib/hashtag'
 
 interface BlogViewCardProps {
   data: ContentData
@@ -306,20 +307,18 @@ export function BlogViewCard({ data }: BlogViewCardProps) {
         </div>
       )}
 
-      {/* Category */}
-      {data.category && (
-        <div>
-          <span className="px-3 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-full">
-            {data.category}
-          </span>
-        </div>
-      )}
-
       {/* Title */}
       <h2 className="text-2xl font-bold text-gray-900">{data.storyTitle}</h2>
 
       {/* Content */}
       <ExpandableText className="text-gray-700 leading-relaxed" lines={4}>{data.excerpt}</ExpandableText>
+
+      {/* Hashtags displayed after content */}
+      {data.category && (
+        <div className="pt-2">
+          <HashtagList tags={data.category} badgeStyle />
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex items-center gap-2 pt-4 border-t border-gray-100">

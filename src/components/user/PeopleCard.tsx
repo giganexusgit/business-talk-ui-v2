@@ -1,22 +1,37 @@
 import Link from 'next/link'
 import { profileHref } from '@/lib/profile-link'
-import {
-  MapPin,
-} from 'lucide-react'
+import { MapPin } from 'lucide-react'
 import { useFollow } from '@/hooks/useFollow'
 import { useAppSelector } from '@/hooks/useRedux'
+import { useState } from 'react'
 
 export default function PeopleCard({ user }: { user: any }) {
   const currentUserId = useAppSelector((state) => String(state.auth?.user?.id || ''))
+  const isPendingProp = Boolean(
+    user?.connection_request_id ||
+    user?.request_id ||
+    user?.requestId ||
+    user?.connection_id ||
+    user?.connectionId ||
+    user?.connection_status === 'pending' ||
+    user?.status === 'pending' ||
+    user?.pending === true,
+  )
+
   const {
     state: followState,
     loading: followLoading,
+    actionState,
     follow,
     unfollow,
+    acceptConnection,
+    deleteConnection,
+    cancelConnection,
     isHydrated,
-  } = useFollow(String(user.id || ''))
+  } = useFollow(String(user.id || ''), isPendingProp ? 'incoming' : undefined)
 
   const isSelf = currentUserId === String(user.id || '')
+  const [isHovered, setIsHovered] = useState(false)
 
   const handleConnect = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -25,18 +40,31 @@ export default function PeopleCard({ user }: { user: any }) {
 
     if (followState === 'connected') {
       await unfollow()
-      return
-    }
-
-    if (followState === 'connect') {
+    } else if (followState === 'pending') {
+      await cancelConnection()
+    } else if (followState === 'connect') {
       await follow()
+    }
+  }
+
+  const handlePendingAction = async (action: 'accept' | 'delete', e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (followLoading) return
+
+    if (action === 'accept') {
+      await acceptConnection()
+    } else {
+      await deleteConnection()
     }
   }
 
   const buttonLabel =
     !isHydrated ? 'Loading...' :
-    followState === 'connected' ? 'Connected' :
-    followState === 'pending' || followLoading ? 'Connecting...' :
+    actionState === 'connecting' ? 'Connecting...' :
+    actionState === 'unfollowing' ? 'Removing...' :
+    followState === 'connected' ? (isHovered ? 'Disconnect' : 'Connected') :
+    followState === 'pending' ? (isHovered ? 'Cancel Request' : 'Requested') :
     'Connect'
 
   return (
@@ -108,35 +136,48 @@ export default function PeopleCard({ user }: { user: any }) {
           </div>
         )}
 
-        {/* Connect Button */}
-        <button
-          onClick={handleConnect}
-          disabled={isSelf || !isHydrated || followLoading || followState === 'pending'}
-          className={`w-full px-3 py-2 text-xs font-medium rounded-lg 
-            transition-all duration-200 flex-shrink-0 border active:scale-95 
-            ${followState === 'connected'
-              ? 'border-green-500 text-green-700 bg-green-50 cursor-default'
-              : 'border-[#212529] text-[#212529]'
-            }
-            ${isSelf || !isHydrated || followLoading || followState === 'pending'
-              ? 'opacity-70 cursor-not-allowed'
-              : ''
-            }`}
-          onMouseEnter={(e) => {
-            if (followState === 'connect' && !followLoading && isHydrated && !isSelf) {
-              e.currentTarget.style.backgroundColor = '#F8F9FA'
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (followState === 'connect') {
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }
-          }}
-        >
-          {isSelf ? 'You' : buttonLabel}
-        </button>
+        {/* Action Buttons */}
+        {followState === 'incoming' ? (
+          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={(e) => handlePendingAction('accept', e)}
+              disabled={followLoading}
+              className="flex-1 rounded-lg border border-green-600 px-3 py-2 text-xs font-medium text-green-700 transition hover:bg-green-50 disabled:opacity-60"
+            >
+              {actionState === 'accepting' ? 'Accepting...' : 'Accept'}
+            </button>
+            <button
+              onClick={(e) => handlePendingAction('delete', e)}
+              disabled={followLoading}
+              className="flex-1 rounded-lg border border-red-600 px-3 py-2 text-xs font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-60"
+            >
+              {actionState === 'deleting' ? 'Deleting...' : 'Delete'}
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={handleConnect}
+            disabled={isSelf || !isHydrated || followLoading}
+            className={`w-full px-3 py-2 text-xs font-medium rounded-lg 
+              transition-all duration-200 flex-shrink-0 border active:scale-95 cursor-pointer
+              ${followState === 'connected'
+                ? 'border-green-500 text-green-700 bg-green-50 hover:bg-red-50 hover:text-red-700 hover:border-red-500'
+                : followState === 'pending'
+                ? 'border-amber-500 text-amber-700 bg-amber-50 hover:bg-red-50 hover:text-red-700 hover:border-red-500'
+                : 'border-[#212529] text-[#212529] hover:bg-gray-100'
+              }
+              ${isSelf || !isHydrated || followLoading
+                ? 'opacity-70 cursor-not-allowed'
+                : ''
+              }`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
+            {isSelf ? 'You' : buttonLabel}
+          </button>
+        )}
 
       </div>
     </Link>
   )
-}
+}

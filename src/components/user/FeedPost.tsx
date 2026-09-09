@@ -2,10 +2,9 @@
 
 import { useRouter } from 'next/navigation'
 import { profileHref } from '@/lib/profile-link'
-import { ThumbsUp, MessageCircle, Send, MoreVertical, Bookmark, Flag, UserCheck, UserMinus, UserPlus, Trash2, Pencil, ImagePlay, X } from 'lucide-react'
+import { ThumbsUp, MessageCircle, Send, MoreVertical, Bookmark, Flag, UserCheck, UserMinus, UserPlus, Trash2, Pencil, X } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { ShareModal } from '@/components/shared/ShareModal'
-import { TagsPopup } from '@/components/shared/TagsPopup'
 import { useQueryClient } from '@tanstack/react-query'
 import { useOpenContent } from '@/hooks/useOpenContent'
 import apiClient from '@/lib/api-client'
@@ -34,19 +33,21 @@ interface FeedPostProps {
   image?: string
   video?: string
   media?: MediaItem[]
-  tags?: string[]
+  tags?: any
+  hashtags?: any
   timestamp: string
   likes: number
   liked?: boolean
-  dislikes: number
+  dislikes?: number
   comments: number
-  sends: number
+  sends?: number
 }
 
-export function FeedPost({ id = Date.now().toString(), authorId = '', author, groupId, group, content, image, video, media = [], tags = [], timestamp, likes, liked = false, comments, sends }: FeedPostProps) {
+export function FeedPost({ id = Date.now().toString(), authorId = '', author, groupId, group, content, image, video, media = [], timestamp, likes, liked = false, comments, sends = 0 }: FeedPostProps) {
   const router = useRouter()
   const reduxUser = useAppSelector((state: any) => state.auth.user)
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar: string }>({ id: '', name: 'You', avatar: '' })
+
   const [isLiked, setIsLiked] = useState(liked)
   const [likeCount, setLikeCount] = useState(likes)
   const [showShareModal, setShowShareModal] = useState(false)
@@ -78,19 +79,13 @@ export function FeedPost({ id = Date.now().toString(), authorId = '', author, gr
       ]
   const [displayMedia, setDisplayMedia] = useState<MediaItem[]>(initialMediaItems)
   const [editContent, setEditContent] = useState(content)
-  const [editTags, setEditTags] = useState<string[]>([])
   const [existingMedia, setExistingMedia] = useState<MediaItem[]>(initialMediaItems)
   const [selectedEditFiles, setSelectedEditFiles] = useState<File[]>([])
   const [editLoading, setEditLoading] = useState(false)
   const [editError, setEditError] = useState('')
-  const [showTagsPopup, setShowTagsPopup] = useState(false)
 
   const removeExistingMedia = (index: number) => {
     setExistingMedia((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  const removeEditTag = (tag: string) => {
-    setEditTags((prev) => prev.filter((t) => t !== tag))
   }
   const requireAuth = useRequireAuth()
   const queryClient = useQueryClient()
@@ -128,7 +123,6 @@ export function FeedPost({ id = Date.now().toString(), authorId = '', author, gr
         ]
     setDisplayMedia(items)
     setEditContent(content)
-    setEditTags([])
     setSelectedEditFiles([])
   }, [content, id, image, video, media])
 
@@ -453,11 +447,6 @@ export function FeedPost({ id = Date.now().toString(), authorId = '', author, gr
       return
     }
 
-    if (editTags && editTags.length > 0) {
-      setEditError('Tags are not allowed for normal posts. Use Questions or Blogs for tagged topics.')
-      return
-    }
-
     setEditLoading(true)
     setEditError('')
 
@@ -466,7 +455,6 @@ export function FeedPost({ id = Date.now().toString(), authorId = '', author, gr
       if (selectedEditFiles.length > 0) {
         const formData = new FormData()
         formData.append('content', editContent)
-        formData.append('tags', JSON.stringify(editTags))
         formData.append('existingMedia', JSON.stringify(existingMedia))
         selectedEditFiles.forEach((file) => {
           formData.append('media', file)
@@ -475,7 +463,6 @@ export function FeedPost({ id = Date.now().toString(), authorId = '', author, gr
       } else {
         payload = {
           content: editContent,
-          tags: editTags,
           existingMedia,
         }
       }
@@ -636,36 +623,6 @@ export function FeedPost({ id = Date.now().toString(), authorId = '', author, gr
                   placeholder="What would you like to share?"
                 />
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setEditError('Tags are not allowed for normal posts. Use Questions or Blogs for tagged topics.')}
-                    className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-400 bg-gray-50 cursor-pointer"
-                    title="Tags are not allowed for normal posts"
-                  >
-                    <ImagePlay className="h-4 w-4" />
-                    Tags (Not allowed for normal posts)
-                  </button>
-                </div>
-
-                {editTags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {editTags.map((tag) => (
-                      <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white">
-                        #{tag}
-                        <button
-                          type="button"
-                          onClick={() => removeEditTag(tag)}
-                          className="hover:text-red-300 ml-1"
-                          title="Remove tag"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-
                 {existingMedia.length > 0 && (
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
                     <p className="text-xs font-semibold text-gray-500 mb-2">Current Media Attachments</p>
@@ -752,13 +709,6 @@ export function FeedPost({ id = Date.now().toString(), authorId = '', author, gr
             </div>
           </div>
         )}
-
-        <TagsPopup
-          isOpen={showTagsPopup}
-          onClose={() => setShowTagsPopup(false)}
-          onTagsChange={setEditTags}
-          selectedTags={editTags}
-        />
         {/* Post Header */}
         <div className="flex items-start justify-between mb-4">
           <div
@@ -859,7 +809,6 @@ export function FeedPost({ id = Date.now().toString(), authorId = '', author, gr
                     <button
                       onClick={() => {
                         setEditContent(displayContent)
-                        setEditTags(tags || [])
                         setExistingMedia([...displayMedia])
                         setSelectedEditFiles([])
                         setEditError('')
@@ -897,21 +846,6 @@ export function FeedPost({ id = Date.now().toString(), authorId = '', author, gr
         >
           <ExpandableText onClick={handleOpenViewer} className="text-gray-800 whitespace-pre-wrap break-words leading-relaxed" lines={4}>{displayContent}</ExpandableText>
         </div>
-
-        {/* Hashtags */}
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3">
-            {tags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => router.push(`/?tab=home&q=${encodeURIComponent(tag)}`)}
-                className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-              >
-                #{tag}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Media Grid */}
         {displayMedia.length > 0 && (

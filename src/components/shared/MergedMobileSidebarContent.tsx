@@ -28,7 +28,7 @@ export const MergedMobileSidebarContent = ({
   groups = [],
   // loading = false,
   onProfileClick,
-  onFollow,
+  onFollow: _onFollow,
   // onSeeAllPeople,
   // onSeeAllGroups,
 }: Props) => {
@@ -192,8 +192,6 @@ export const MergedMobileSidebarContent = ({
                     key={person.id}
                     person={person}
                     onProfileClick={onProfileClick}
-                    connectState="connect"
-                    onConnectClick={() => onFollow(person.id)}
                   />
                 ))}
               </div>

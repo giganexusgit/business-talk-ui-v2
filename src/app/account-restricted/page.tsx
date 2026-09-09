@@ -4,8 +4,7 @@ import { useRouter } from 'next/navigation'
 import { ShieldAlert, LogOut, Mail } from 'lucide-react'
 import { useAppSelector } from '@/hooks/useRedux'
 import apiClient from '@/lib/api-client'
-
-const SUPPORT_EMAIL = 'support@businesstalk24.com'
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/constants'
 
 export default function AccountRestrictedPage() {
   const router = useRouter()
@@ -40,7 +39,7 @@ export default function AccountRestrictedPage() {
         <p className="text-sm mb-6" style={{ color: '#5F6368' }}>
           Please contact support at{' '}
           <a
-            href={`mailto:${SUPPORT_EMAIL}`}
+            href={SUPPORT_MAILTO}
             className="text-blue-600 hover:underline font-medium"
           >
             {SUPPORT_EMAIL}
@@ -55,7 +54,7 @@ export default function AccountRestrictedPage() {
 
         <div className="flex flex-col gap-3">
           <a
-            href={`mailto:${SUPPORT_EMAIL}?subject=Account Restriction Appeal&body=Hello, my account (${user?.email ?? ''}) has been restricted. I would like to appeal this decision.`}
+            href={`${SUPPORT_MAILTO}?subject=Account Restriction Appeal&body=Hello, my account (${user?.email ?? ''}) has been restricted. I would like to appeal this decision.`}
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             <Mail className="w-4 h-4" />

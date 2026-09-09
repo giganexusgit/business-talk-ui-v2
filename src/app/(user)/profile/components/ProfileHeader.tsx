@@ -7,10 +7,11 @@ import apiClient from '@/lib/api-client'
 
 export interface ProfileHeaderProps {
   profileData: any;
-  connectState: 'connect' | 'pending' | 'connected';
+  connectState: 'connect' | 'pending' | 'incoming' | 'connected';
   loading: boolean;
   onConnect: () => void;
-
+  onAccept?: () => void;
+  onDelete?: () => void;
   userId: string;
   isOwnProfile: boolean;
 }
@@ -20,6 +21,8 @@ export function ProfileHeader({
   connectState,
   loading,
   onConnect,
+  onAccept,
+  onDelete,
   userId,
   isOwnProfile
 }: ProfileHeaderProps) {
@@ -31,6 +34,7 @@ export function ProfileHeader({
   const [imageLoading, setImageLoading] = useState(false)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const [hoveringConnected, setHoveringConnected] = useState(false)
+  const [hoveringPending, setHoveringPending] = useState(false)
 
   const avatarSrc = profileData.avatar || `https://ui-avatars.com/api/name=${encodeURIComponent(profileData.name || profileData.username || 'User')}`
   const coverSrc = profileData.cover_image || `https://ui-avatars.com/api/name=${encodeURIComponent(profileData.name || profileData.username || 'User')}`
@@ -162,49 +166,64 @@ export function ProfileHeader({
           {!isOwnProfile && (
             <div className="flex gap-2 sm:gap-3 mt-3 sm:mt-4 w-full sm:w-auto">
 
-              {/* CONNECT */}
-              <button
-                onClick={onConnect}
-                disabled={loading}
-                className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all duration-200 active:scale-95
+              {/* CONNECT / INCOMING ACTIONS */}
+              {connectState === 'incoming' ? (
+                <>
+                  <button
+                    onClick={onAccept}
+                    disabled={loading}
+                    className="px-4 py-2 text-sm font-medium rounded-lg border border-green-600 bg-green-50 text-green-700 hover:bg-green-100 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Accepting...' : 'Accept'}
+                  </button>
+                  <button
+                    onClick={onDelete}
+                    disabled={loading}
+                    className="px-4 py-2 text-sm font-medium rounded-lg border border-red-600 bg-red-50 text-red-700 hover:bg-red-100 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Deleting...' : 'Delete'}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={onConnect}
+                  disabled={loading}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all duration-200 active:scale-95
 
-                  ${
-                    connectState === 'connected'
-                      ? 'border-green-500 bg-green-50 text-green-700 hover:bg-red-50 hover:border-red-500 hover:text-red-600'
-                      : connectState === 'pending'
-                      ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
-                      : 'border-black text-black hover:bg-gray-50'
+                    ${
+                      connectState === 'connected'
+                        ? 'border-green-500 bg-green-50 text-green-700 hover:bg-red-50 hover:border-red-500 hover:text-red-600'
+                        : connectState === 'pending'
+                        ? 'border-amber-500 bg-amber-50 text-amber-700 hover:bg-red-50 hover:border-red-500 hover:text-red-600'
+                        : 'border-black text-black hover:bg-gray-50'
+                    }
+
+                    ${loading ? 'opacity-60 cursor-not-allowed' : ''}
+                    `}
+                  onMouseEnter={() => {
+                    if (connectState === 'connected') setHoveringConnected(true)
+                    if (connectState === 'pending') setHoveringPending(true)
+                  }}
+                  onMouseLeave={() => {
+                    setHoveringConnected(false)
+                    setHoveringPending(false)
+                  }}
+                >
+                  {
+                    loading
+                      ? 'Loading...'
+                      : connectState === 'connected'
+                        ? hoveringConnected
+                          ? 'Disconnect'
+                          : 'Connected'
+                        : connectState === 'pending'
+                          ? hoveringPending
+                            ? 'Cancel Request'
+                            : 'Pending'
+                          : 'Connect'
                   }
-
-                  ${loading ? 'opacity-60 cursor-not-allowed' : ''}
-                  `}
-                style={{
-                  backgroundColor:
-                    connectState === 'connected' ? '#F0FDF4'
-                    : connectState === 'pending' ? '#FEFCE8'
-                    : loading ? '#212529'
-                    : 'transparent',
-                }}
-                onMouseEnter={() =>
-                  connectState === 'connected' &&
-                  setHoveringConnected(true)
-                }
-                onMouseLeave={() =>
-                  setHoveringConnected(false)
-                }
-              >
-                {
-                  loading
-                    ? 'Loading...'
-                    : connectState === 'connected'
-                      ? hoveringConnected
-                        ? 'Disconnect'
-                        : 'Connected'
-                      : connectState === 'pending'
-                        ? 'Pending'
-                        : 'Connect'
-                }
-              </button>
+                </button>
+              )}
 
               {/* MESSAGE */}
               <button

@@ -1,5 +1,7 @@
 'use client'
 
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/constants'
+
 export default function UserAgreementPage() {
   return (
     <div className="min-h-screen py-12" style={{ backgroundColor: '#F8F9FA' }}>
@@ -110,8 +112,10 @@ export default function UserAgreementPage() {
                   For questions about these terms, please contact us at:
                 </p>
                 <p className="mt-3">
-                  Email: support@businesstalk24.com<br />
-                  Address: 123 Business Street, San Francisco, CA 94102
+                  Email:{' '}
+                  <a href={SUPPORT_MAILTO} className="text-blue-600 underline font-medium hover:text-blue-800">
+                    {SUPPORT_EMAIL}
+                  </a>
                 </p>
               </section>
             </div>

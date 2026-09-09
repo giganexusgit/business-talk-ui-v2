@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Briefcase, Check, MapPin, MessageCircle, UserPlus } from 'lucide-react'
 import apiClient from '@/lib/api-client'
 import { useFollow } from '@/hooks/useFollow'
+import BioText from '@/components/common/BioText'
 
 export default function GroupRequestProfilePage() {
   const router = useRouter()
@@ -267,9 +268,7 @@ export default function GroupRequestProfilePage() {
 
         <div className="bg-white rounded-2xl shadow-sm border p-6" style={{ border: '1px solid #E8E8E8' }}>
           <h2 className="text-xl font-semibold mb-3" style={{ color: '#212529' }}>About</h2>
-          <p className="text-sm leading-7" style={{ color: '#5F6368' }}>
-            {profile?.about || 'No additional details available.'}
-          </p>
+          <BioText content={profile?.about} fallback="No additional details available." />
         </div>
       </div>
     </div>

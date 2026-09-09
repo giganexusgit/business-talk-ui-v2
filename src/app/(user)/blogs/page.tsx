@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { profileHref } from '@/lib/profile-link'
 import { ShareModal } from '@/components/shared/ShareModal'
 import { useAppSelector } from '@/hooks/useRedux'
+import { HashtagList } from '@/lib/hashtag'
 
 interface Author {
   name: string
@@ -355,20 +356,16 @@ export default function BlogsPage() {
                   <span className="px-3 py-1 text-sm font-medium rounded-full" style={{ backgroundColor: '#E3F2FD', color: '#1976D2' }}>
                     Featured
                   </span>
-                  <span className="px-3 py-1 text-sm font-medium rounded-full" style={{ backgroundColor: '#F8F9FA', color: '#5F6368' }}>
-                    {Array.isArray(filteredBlogs[0]?.category)
-                      ? filteredBlogs[0].category.map((cat: string) =>
-                          cat.replace(/['",]/g, '').trim()
-                        ).join(', ')
-                      : (filteredBlogs[0]?.category || '').replace(/['",]/g, '').trim()}
-                  </span>
                 </div>
                 <h2 className="text-2xl font-semibold mb-3 whitespace-pre-wrap break-words" style={{ color: '#212529' }} onClick={() => filteredBlogs[0] && handleBlogClick(filteredBlogs[0])}>
                   {filteredBlogs[0]?.title}
                 </h2>
-                <ExpandableText className="mb-4 text-sm whitespace-pre-wrap break-words" lines={4} onClick={() => filteredBlogs[0] && handleBlogClick(filteredBlogs[0])}>
+                <ExpandableText className="mb-3 text-sm whitespace-pre-wrap break-words" lines={4} onClick={() => filteredBlogs[0] && handleBlogClick(filteredBlogs[0])}>
                   {filteredBlogs[0]?.excerpt}
                 </ExpandableText>
+                <div className="mb-4">
+                  <HashtagList tags={filteredBlogs[0]?.category} badgeStyle />
+                </div>
                 <div
                   className="flex items-center gap-3 mb-4 cursor-pointer"
                   onClick={e => { e.stopPropagation(); filteredBlogs[0]?.authorId && router.push(profileHref(filteredBlogs[0].authorId, filteredBlogs[0]?.author?.name)) }}
@@ -438,25 +435,20 @@ export default function BlogsPage() {
               <div className="grid md:grid-cols-3 gap-6">
                 <img src={blog.image} alt={blog.title} className="w-full h-48 object-cover rounded-xl" onClick={() => handleBlogClick(blog)} />
                 <div className="md:col-span-2">
-                  <div className="flex items-center gap-2 mb-3" onClick={() => handleBlogClick(blog)}>
-                    <span className="px-3 py-1 text-sm font-medium rounded-full" style={{ backgroundColor: '#F8F9FA', color: '#5F6368' }}>
-                      {Array.isArray(blog.category)
-                        ? blog.category.map((cat: string) =>
-                            cat.replace(/['",]/g, '').trim()
-                          ).join(', ')
-                        : (blog.category || '').replace(/['",]/g, '').trim()}
-                    </span>
-                    <span style={{ color: '#BDBDBD' }}>•</span>
-                    <span className="text-sm" style={{ color: '#5F6368' }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-sm font-medium text-gray-500">
                       {blog.publishedAt}
                     </span>
                   </div>
                   <h3 className="text-xl font-semibold mb-2 whitespace-pre-wrap break-words" style={{ color: '#212529' }} onClick={() => handleBlogClick(blog)}>
                     {blog.title}
                   </h3>
-                  <ExpandableText className="mb-4 text-sm whitespace-pre-wrap break-words" lines={4} onClick={() => handleBlogClick(blog)}>
+                  <ExpandableText className="mb-3 text-sm whitespace-pre-wrap break-words" lines={4} onClick={() => handleBlogClick(blog)}>
                     {blog.excerpt}
                   </ExpandableText>
+                  <div className="mb-4">
+                    <HashtagList tags={blog.category} badgeStyle />
+                  </div>
 
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div

@@ -1,5 +1,7 @@
 'use client'
 
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/constants'
+
 export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen py-12" style={{ backgroundColor: '#F8F9FA' }}>
@@ -9,11 +11,10 @@ export default function PrivacyPolicyPage() {
             <h1 className="text-3xl font-bold mb-2" style={{ color: '#212529' }}>Privacy Policy</h1>
             <p className="mb-8 text-sm" style={{ color: '#5F6368' }}>Effective Date: 13th May, 2026</p>
             <p className="mb-8" style={{ color: '#5F6368' }}>
-              Businesstalk24 is committed to protecting user privacy.
+              BusinessTalk24 is committed to protecting user privacy.
             </p>
 
             <div className="space-y-8" style={{ color: '#212529' }}>
-
               <section>
                 <h2 className="text-lg font-semibold mb-3" style={{ color: '#212529' }}>1. Information Collected</h2>
                 <p className="mb-2" style={{ color: '#5F6368' }}>We may collect:</p>
@@ -102,30 +103,17 @@ export default function PrivacyPolicyPage() {
               <hr style={{ borderColor: '#E8E8E8' }} />
 
               <section>
-                <h2 className="text-lg font-semibold mb-3" style={{ color: '#212529' }}>9. Updates</h2>
+                <h2 className="text-lg font-semibold mb-3" style={{ color: '#212529' }}>9. Contact Us</h2>
                 <p style={{ color: '#5F6368' }}>
-                  This policy may be updated periodically.
-                </p>
-              </section>
-
-              <hr style={{ borderColor: '#E8E8E8' }} />
-
-              <section>
-                <h2 className="text-lg font-semibold mb-3" style={{ color: '#212529' }}>10. Contact</h2>
-                <p style={{ color: '#5F6368' }}>
-                  For privacy concerns:{' '}
+                  For privacy concerns or support:{' '}
                   <a
-                    href="mailto:support@businesstalk24.com"
-                    className="transition-colors"
-                    style={{ color: '#1976D2' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = '#1565C0')}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = '#1976D2')}
+                    href={SUPPORT_MAILTO}
+                    className="font-medium text-blue-600 hover:underline"
                   >
-                    support@businesstalk24.com
+                    {SUPPORT_EMAIL}
                   </a>
                 </p>
               </section>
-
             </div>
           </div>
         </div>

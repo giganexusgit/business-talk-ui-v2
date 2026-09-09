@@ -16,7 +16,7 @@ import {
 import apiClient from '@/lib/api-client'
 import { useSearchParams } from 'next/navigation'
 import adminApi from '@/lib/admin-api'
-import ExpandableText from '@/components/common/ExpandableText'
+import BioText from '@/components/common/BioText'
 
 export default function AdminUsersPage() {
   const router = useRouter()
@@ -502,7 +502,7 @@ export default function AdminUsersPage() {
                   {fullProfile?.short_bio && (
                     <div className="mb-4">
                       <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Bio</p>
-                        <ExpandableText className="text-sm text-gray-700"> {fullProfile.short_bio} </ExpandableText>
+                      <BioText content={fullProfile.short_bio} />
                     </div>
                   )}
 
@@ -510,7 +510,7 @@ export default function AdminUsersPage() {
                   {(fullProfile?.about) && (
                     <div className="mb-4">
                       <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">About</p>
-                        <ExpandableText className="text-sm text-gray-700"> {fullProfile.about} </ExpandableText>
+                      <BioText content={fullProfile.about} />
                     </div>
                   )}
 

@@ -8,6 +8,7 @@ import apiClient from '@/lib/api-client'
 import { useAccountStatus } from '@/hooks/useRedux'
 import { getTimeAgo } from '@/lib/utils'
 import ExpandableText from '@/components/common/ExpandableText'
+import { HashtagList } from '@/lib/hashtag'
 
 interface Props {
   data: ContentData
@@ -291,15 +292,8 @@ export function QuestionViewCard({ data }: Props) {
 
       {/* Tags */}
       {data.tags?.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {data.tags.map((tag: any, idx: number) => {
-            const label = typeof tag === 'string' ? tag : tag?.name || tag?.title || String(tag?.id) || ''
-            return (
-              <span key={idx} className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                {label}
-              </span>
-            )
-          })}
+        <div>
+          <HashtagList tags={data.tags} badgeStyle />
         </div>
       )}
 

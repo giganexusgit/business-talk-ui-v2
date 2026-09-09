@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, {
   useState,
@@ -23,7 +23,11 @@ import {
   BellOff,
   Bell,
   Archive,
+  Paperclip,
+  X,
+  FileText,
 } from 'lucide-react';
+import { formatFileSize, validateAttachmentFile } from '@/lib/chat/attachmentUtils';
 
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
 import {
@@ -326,6 +330,13 @@ const MessagesClient = () => {
   const [showMobileList, setShowMobileList] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
+  // ── Attachment state ───────────────────────────────────────────────────────
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+
   // ── Refs ───────────────────────────────────────────────────────────────────
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
@@ -548,12 +559,58 @@ const MessagesClient = () => {
     router.push(profileHref(selectedConversation.participantId, selectedConversation.name));
   }, [router, selectedConversation]);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validation = validateAttachmentFile(file);
+    if (!validation.valid) {
+      setAttachmentError(validation.error || 'Invalid file');
+      e.target.value = '';
+      return;
+    }
+
+    setAttachmentError(null);
+    setSelectedFile(file);
+
+    if (file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setFilePreviewUrl(url);
+    } else {
+      setFilePreviewUrl(null);
+    }
+
+    e.target.value = '';
+  };
+
+  const handleRemoveAttachment = () => {
+    if (filePreviewUrl) {
+      URL.revokeObjectURL(filePreviewUrl);
+    }
+    setSelectedFile(null);
+    setFilePreviewUrl(null);
+    setAttachmentError(null);
+  };
+
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !activeConversationId) return;
+    if ((!messageInput.trim() && !selectedFile) || !activeConversationId || isUploading) return;
+
+    const fileToSend = selectedFile;
+    const content = messageInput.trim();
+
+    if (filePreviewUrl) {
+      URL.revokeObjectURL(filePreviewUrl);
+    }
+
+    setMessageInput('');
+    setSelectedFile(null);
+    setFilePreviewUrl(null);
+    setAttachmentError(null);
 
     const pendingMessage: MessageEntity = buildOptimisticMessage({
       conversationId: activeConversationId,
-      text: messageInput,
+      text: content,
+      file: fileToSend,
       currentUser: {
         id: String(
           authUser?.id ??
@@ -583,25 +640,42 @@ const MessagesClient = () => {
       dispatch(addPendingMessage(pendingMessage));
     }
 
-    const content = messageInput;
-    setMessageInput('');
+    try {
+      setIsUploading(true);
+      setUploadProgress(0);
 
-    const result = await dispatch(
-      sendMessage({ conversationId: activeConversationId, content, tempId }),
-    );
-
-    if (sendMessage.fulfilled.match(result)) {
-      const { message } = result.payload;
-      if (hasRqCache) {
-        replaceOptimisticInCache(
-          queryClient,
-          activeConversationId,
+      const result = await dispatch(
+        sendMessage({
+          conversationId: activeConversationId,
+          content,
           tempId,
-          message,
-        );
+          file: fileToSend || undefined,
+          onUploadProgress: (percent) => setUploadProgress(percent),
+        }),
+      );
+
+      if (sendMessage.fulfilled.match(result)) {
+        const { message } = result.payload;
+        if (hasRqCache) {
+          replaceOptimisticInCache(
+            queryClient,
+            activeConversationId,
+            tempId,
+            message,
+          );
+        }
+      } else if (hasRqCache) {
+        markMessageFailedInCache(queryClient, activeConversationId, tempId);
+        setAttachmentError('Failed to send message/attachment. Please try again.');
       }
-    } else if (hasRqCache) {
-      markMessageFailedInCache(queryClient, activeConversationId, tempId);
+    } catch (err) {
+      if (hasRqCache) {
+        markMessageFailedInCache(queryClient, activeConversationId, tempId);
+      }
+      setAttachmentError('Network error while sending attachment.');
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -617,18 +691,6 @@ const MessagesClient = () => {
     setShowEmojiPicker(false);
     // Return focus to textarea so Enter key works immediately
     setTimeout(() => textareaRef.current?.focus(), 0);
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !activeConversationId) return;
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const fileString = event.target?.result as string;
-      const { default: client } = await import('@/lib/api-client');
-      await client.sendMessageWithAttachment(activeConversationId, fileString);
-    };
-    reader.readAsDataURL(file);
   };
 
   // ── Filtered conversation list ─────────────────────────────────────────────
@@ -935,56 +997,149 @@ const MessagesClient = () => {
           </button>
         )}
 
-        {/* Message input */}
-        <div className="p-2 md:p-3 bg-white border-t flex items-end gap-2 relative">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            className="hidden"
-          />
+        {/* Staging, progress, error & input container */}
+        <div className="bg-white border-t relative">
+          {/* Staged file card */}
+          {selectedFile && (
+            <div className="px-3 pt-2.5">
+              <div className="flex items-center gap-3 p-2.5 rounded-xl border border-gray-200 bg-gray-50 max-w-sm relative">
+                {filePreviewUrl ? (
+                  <img
+                    src={filePreviewUrl}
+                    alt="Staged attachment preview"
+                    className="w-12 h-12 rounded-lg object-cover border border-gray-200 shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                )}
 
-          <button
-            ref={emojiToggleRef}
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="p-1.5 shrink-0 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <Smile className="w-5 h-5 text-gray-500" />
-          </button>
+                <div className="flex-1 min-w-0 pr-6">
+                  <p className="text-xs font-semibold text-gray-800 truncate" title={selectedFile.name}>
+                    {selectedFile.name}
+                  </p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    {formatFileSize(selectedFile.size)}
+                  </p>
+                </div>
 
-          {showEmojiPicker && (
-            <div
-              ref={emojiPickerRef}
-              className="absolute bottom-14 left-2 md:left-10 z-50"
-            >
-              <EmojiPicker onEmojiClick={handleEmojiClick} />
+                <button
+                  type="button"
+                  onClick={handleRemoveAttachment}
+                  disabled={isUploading}
+                  className="absolute top-2 right-2 p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-40"
+                  aria-label="Remove attachment"
+                  title="Remove attachment"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           )}
 
-          <textarea
-            ref={textareaRef}
-            value={messageInput}
-            onChange={(e) => {
-              setMessageInput(e.target.value);
-              if (activeConversationId) {
-                dispatch(
-                  emitTypingAction({ conversationId: activeConversationId }),
-                );
-              }
-            }}
-            onKeyDown={handleKeyDown}
-            rows={1}
-            placeholder="Type a message"
-            className="flex-1 px-3 md:px-4 py-2 border rounded resize-none max-h-28 overflow-y-auto text-sm focus:outline-none focus:ring-2 focus:ring-black/10"
-          />
+          {/* Upload Progress Bar */}
+          {isUploading && (
+            <div className="px-3 pt-2">
+              <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-blue-600 h-1.5 transition-all duration-200"
+                  style={{ width: `${Math.max(5, uploadProgress)}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1 text-right">
+                Sending attachment... {uploadProgress}%
+              </p>
+            </div>
+          )}
 
-          <button
-            onClick={handleSendMessage}
-            disabled={!messageInput.trim()}
-            className="bg-black text-white px-2.5 md:px-3 py-2 rounded shrink-0 disabled:opacity-40 transition-opacity"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+          {/* Error Banner */}
+          {attachmentError && (
+            <div className="px-3 pt-2">
+              <div className="flex items-center justify-between text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
+                <span>{attachmentError}</span>
+                <button onClick={() => setAttachmentError(null)} className="text-red-500 hover:text-red-700">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Controls + Textarea */}
+          <div className="p-2 md:p-3 flex items-end gap-2 relative">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar"
+              className="hidden"
+            />
+
+            {/* Paperclip attachment button */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="p-2 shrink-0 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-gray-700 disabled:opacity-40"
+              aria-label="Attach file or photo"
+              title="Attach file or photo"
+            >
+              <Paperclip className="w-5 h-5" />
+            </button>
+
+            {/* Emoji toggle button */}
+            <button
+              ref={emojiToggleRef}
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              disabled={isUploading}
+              className="p-2 shrink-0 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-gray-700 disabled:opacity-40"
+              aria-label="Insert emoji"
+              title="Insert emoji"
+            >
+              <Smile className="w-5 h-5" />
+            </button>
+
+            {showEmojiPicker && (
+              <div
+                ref={emojiPickerRef}
+                className="absolute bottom-14 left-2 md:left-10 z-50"
+              >
+                <EmojiPicker onEmojiClick={handleEmojiClick} />
+              </div>
+            )}
+
+            <textarea
+              ref={textareaRef}
+              value={messageInput}
+              disabled={isUploading}
+              onChange={(e) => {
+                setMessageInput(e.target.value);
+                if (activeConversationId) {
+                  dispatch(
+                    emitTypingAction({ conversationId: activeConversationId }),
+                  );
+                }
+              }}
+              onKeyDown={handleKeyDown}
+              rows={1}
+              placeholder={selectedFile ? 'Add a caption (optional)...' : 'Type a message'}
+              className="flex-1 px-3 md:px-4 py-2 border rounded-xl resize-none max-h-28 overflow-y-auto text-sm focus:outline-none focus:ring-2 focus:ring-black/10 disabled:bg-gray-50"
+            />
+
+            <button
+              onClick={handleSendMessage}
+              disabled={(!messageInput.trim() && !selectedFile) || isUploading}
+              className="bg-black text-white px-3 py-2 rounded-xl shrink-0 disabled:opacity-40 transition-opacity flex items-center justify-center min-w-[40px] h-[38px]"
+              aria-label="Send message"
+              title="Send message"
+            >
+              {isUploading ? (
+                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

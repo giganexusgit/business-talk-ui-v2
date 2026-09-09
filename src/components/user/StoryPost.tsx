@@ -32,6 +32,7 @@ import { ReportModal } from '../shared/ReportModal'
 import { useOpenContent } from '@/hooks/useOpenContent'
 import apiClient from '@/lib/api-client'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
+import { parseHashtags, HashtagList } from '@/lib/hashtag'
 
 interface StoryPostProps {
   id?: string
@@ -49,8 +50,9 @@ interface StoryPostProps {
   liked?: boolean
   comments: number
   views: number
-  readTime: string
-  category: string
+  readTime?: string
+  category?: string
+  tags?: any
 }
 
 export function StoryPost({
@@ -64,11 +66,17 @@ export function StoryPost({
   likes,
   liked = false,
   views,
-  // readTime,
-  // category,
+  category,
+  tags,
 }: StoryPostProps) {
   const router = useRouter()
   const { openStory } = useOpenContent()
+
+  const displayTags = parseHashtags(
+    tags && parseHashtags(tags).length > 0
+      ? tags
+      : (category || (storyTitle + ' ' + excerpt))
+  )
 
   const [showShareModal, setShowShareModal] = useState(false)
   const [showComments, setShowComments] = useState(false)
@@ -689,6 +697,13 @@ export function StoryPost({
         </h2>
 
         <ExpandableText className="text-sm text-gray-600 whitespace-pre-wrap break-words" lines={4}>{displayExcerpt}</ExpandableText>  {/* add font-blod/semibold if you want a bit bold text for question */}
+
+        {/* Hashtags */}
+        {displayTags.length > 0 && (
+          <div className="mt-3">
+            <HashtagList tags={displayTags} badgeStyle />
+          </div>
+        )}
 
         {/* ACTION BAR */}
         <div className="flex flex-wrap gap-3 mt-4 border-y py-3">

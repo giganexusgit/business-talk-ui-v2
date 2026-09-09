@@ -56,6 +56,9 @@ export function ProfileLayout({
     loading: followLoading,
     follow,
     unfollow,
+    acceptConnection,
+    deleteConnection,
+    cancelConnection,
   } = useFollow(userId || '')
 
   return (
@@ -67,15 +70,16 @@ export function ProfileLayout({
           connectState={followState}
           loading={followLoading}
           onConnect={() => {
-            if (
-              followState ===
-              'connected'
-            ) {
+            if (followState === 'connected') {
               unfollow()
+            } else if (followState === 'pending') {
+              cancelConnection()
             } else {
               follow()
             }
           }}
+          onAccept={acceptConnection}
+          onDelete={deleteConnection}
           userId={userId || ''}
           isOwnProfile={
             !!isOwnProfile

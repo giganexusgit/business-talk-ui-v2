@@ -1,12 +1,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/api-client'
-import { useAppDispatch } from '@/hooks/useRedux'
+import { useAppDispatch, useAppSelector } from '@/hooks/useRedux'
 import { fetchNotifications, fetchUnreadCount } from '@/redux/slices/notificationsSlice'
+import {
+  updateConnectionCacheOnAccept,
+  updateConnectionCacheOnDelete,
+  updateConnectionCacheOnFollow,
+} from '@/hooks/useFollow'
 
 export function useUsers() {
+  const queryClient = useQueryClient()
   const dispatch = useAppDispatch()
+  const currentUserId = useAppSelector((state) => String(state.auth?.user?.id || ''))
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -36,12 +44,14 @@ export function useUsers() {
 
   const followUser = async (id: string) => {
     try {
+      updateConnectionCacheOnFollow(queryClient, currentUserId, id)
       await apiClient.followUserById(id)
 
       // 🔥 instant UI update
-      setUsers(prev => prev.filter(u => u.id !== id))
+      setUsers(prev => prev.filter(u => String(u.id) !== String(id)))
     } catch (err) {
       console.error('Follow failed', err)
+      updateConnectionCacheOnDelete(queryClient, currentUserId, id)
     }
   }
 
@@ -51,24 +61,29 @@ export function useUsers() {
   }
 
   const acceptConnectionRequest = async (user: any) => {
+    const targetUserId = String(user?.id || user?.userId || '')
     const requestId = getConnectionRequestId(user)
     if (!requestId) return
 
     try {
+      updateConnectionCacheOnAccept(queryClient, currentUserId, targetUserId)
       await apiClient.acceptConnectionRequest(requestId)
       setUsers(prev => prev.filter((item) => String(item.id) !== String(user.id)))
       dispatch(fetchNotifications({ force: true }))
       dispatch(fetchUnreadCount())
     } catch (err) {
       console.error('Accept connection request failed', err)
+      updateConnectionCacheOnDelete(queryClient, currentUserId, targetUserId)
     }
   }
 
   const deleteConnectionRequest = async (user: any) => {
+    const targetUserId = String(user?.id || user?.userId || '')
     const requestId = getConnectionRequestId(user)
     if (!requestId) return
 
     try {
+      updateConnectionCacheOnDelete(queryClient, currentUserId, targetUserId)
       await apiClient.deleteConnectionRequest(requestId)
       setUsers(prev => prev.filter((item) => String(item.id) !== String(user.id)))
       dispatch(fetchNotifications({ force: true }))
@@ -79,9 +94,10 @@ export function useUsers() {
   }
 
   const cancelConnectionRequest = async (user: any) => {
-    const requestId = getConnectionRequestId(user)
     const targetUserId = String(user?.id || user?.userId || '')
+    const requestId = getConnectionRequestId(user)
     try {
+      updateConnectionCacheOnDelete(queryClient, currentUserId, targetUserId)
       if (requestId && requestId !== targetUserId) {
         await apiClient.deleteConnectionRequest(requestId)
       } else if (targetUserId) {
@@ -97,6 +113,7 @@ export function useUsers() {
 
   const unfollowUser = async (id: string) => {
     try {
+      updateConnectionCacheOnDelete(queryClient, currentUserId, id)
       await apiClient.unfollowUserById(id)
       fetchUsers()
     } catch (err) {
@@ -105,4 +122,4 @@ export function useUsers() {
   }
 
   return { users, loading, followUser, unfollowUser, acceptConnectionRequest, deleteConnectionRequest, cancelConnectionRequest }
-}
+}

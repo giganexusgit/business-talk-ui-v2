@@ -31,16 +31,6 @@ function PeopleCard({
   onDeleteConnection: (user: any) => Promise<void> | void
 }) {
   const currentUserId = useAppSelector((state) => String(state.auth?.user?.id || ''))
-  const {
-    state: followState,
-    loading: followLoading,
-    follow,
-    unfollow,
-    isHydrated,
-  } = useFollow(String(user.id || ''))
-
-  const isSelf = currentUserId === String(user.id || '')
-  const [actionState, setActionState] = useState<'idle' | 'accepting' | 'deleting'>('idle')
   const isPendingRequest = Boolean(
     user?.connection_request_id ||
     user?.request_id ||
@@ -52,6 +42,20 @@ function PeopleCard({
     user?.pending === true,
   )
 
+  const {
+    state: followState,
+    loading: followLoading,
+    actionState: followActionState,
+    follow,
+    unfollow,
+    acceptConnection,
+    deleteConnection,
+    cancelConnection,
+    isHydrated,
+  } = useFollow(String(user.id || ''), isPendingRequest ? 'incoming' : undefined)
+
+  const isSelf = currentUserId === String(user.id || '')
+  const [actionState, setActionState] = useState<'idle' | 'accepting' | 'deleting'>('idle')
   const [isHovered, setIsHovered] = useState(false)
 
   const handleConnect = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -59,12 +63,11 @@ function PeopleCard({
     e.stopPropagation()
     if (isSelf || followLoading || !isHydrated) return
 
-    if (followState === 'connected' || followState === 'pending') {
+    if (followState === 'connected') {
       await unfollow()
-      return
-    }
-
-    if (followState === 'connect') {
+    } else if (followState === 'pending') {
+      await cancelConnection()
+    } else if (followState === 'connect') {
       await follow()
     }
   }
@@ -72,22 +75,30 @@ function PeopleCard({
   const handlePendingAction = async (action: 'accept' | 'delete', e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     e.stopPropagation()
-    if (actionState !== 'idle') return
+    if (actionState !== 'idle' || followLoading) return
 
     setActionState(action === 'accept' ? 'accepting' : 'deleting')
-    if (action === 'accept') {
-      await onAcceptConnection(user)
-    } else {
-      await onDeleteConnection(user)
+    try {
+      if (action === 'accept') {
+        await acceptConnection()
+        await onAcceptConnection(user)
+      } else {
+        await deleteConnection()
+        await onDeleteConnection(user)
+      }
+    } finally {
+      setActionState('idle')
     }
-    setActionState('idle')
   }
+
+  const isProcessing = followLoading || actionState !== 'idle'
 
   const buttonLabel =
     !isHydrated ? 'Loading...' :
+    followActionState === 'connecting' ? 'Connecting...' :
+    followActionState === 'unfollowing' ? 'Removing...' :
     followState === 'connected' ? (isHovered ? 'Disconnect' : 'Connected') :
     followState === 'pending' ? (isHovered ? 'Cancel Request' : 'Requested') :
-    followLoading ? 'Connecting...' :
     'Connect'
 
   return (
@@ -160,27 +171,27 @@ function PeopleCard({
         )}
 
         {/* Connection Actions */}
-        {isPendingRequest ? (
-          <div className="flex gap-2">
+        {followState === 'incoming' ? (
+          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={(e) => handlePendingAction('accept', e)}
-              disabled={actionState !== 'idle'}
+              disabled={isProcessing}
               className="flex-1 rounded-lg border border-green-600 px-3 py-2 text-xs font-medium text-green-700 transition hover:bg-green-50 disabled:opacity-60"
             >
-              {actionState === 'accepting' ? 'Accepting...' : 'Accept'}
+              {actionState === 'accepting' || followActionState === 'accepting' ? 'Accepting...' : 'Accept'}
             </button>
             <button
               onClick={(e) => handlePendingAction('delete', e)}
-              disabled={actionState !== 'idle'}
+              disabled={isProcessing}
               className="flex-1 rounded-lg border border-red-600 px-3 py-2 text-xs font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-60"
             >
-              {actionState === 'deleting' ? 'Deleting...' : 'Delete'}
+              {actionState === 'deleting' || followActionState === 'deleting' ? 'Deleting...' : 'Delete'}
             </button>
           </div>
         ) : (
           <button
             onClick={handleConnect}
-            disabled={isSelf || !isHydrated || followLoading}
+            disabled={isSelf || !isHydrated || isProcessing}
             className={`w-full px-3 py-2 text-xs font-medium rounded-lg 
               transition-all duration-200 flex-shrink-0 border active:scale-95 cursor-pointer
               ${followState === 'connected'
@@ -189,7 +200,7 @@ function PeopleCard({
                 ? 'border-amber-500 text-amber-700 bg-amber-50 hover:bg-red-50 hover:text-red-700 hover:border-red-500'
                 : 'border-[#212529] text-[#212529] hover:bg-gray-100'
               }
-              ${isSelf || !isHydrated || followLoading
+              ${isSelf || !isHydrated || isProcessing
                 ? 'opacity-70 cursor-not-allowed'
                 : ''
               }`}

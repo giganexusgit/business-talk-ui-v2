@@ -928,13 +928,28 @@ class ApiClient {
 
   sendMessageWithAttachment(
     conversationId: string,
-    content: string,) {
+    content: string,
+    file?: File,
+    options?: { onUploadProgress?: (progressEvent: any) => void }
+  ) {
     const formData = new FormData()
-    formData.append('messageType', 'text')
-    formData.append('content', content)
+    if (file) {
+      const isImage = file.type.startsWith('image/')
+      const isVideo = file.type.startsWith('video/')
+      const isAudio = file.type.startsWith('audio/')
+      const msgType = isImage ? 'image' : isVideo ? 'video' : isAudio ? 'audio' : 'file'
+      formData.append('file', file)
+      formData.append('messageType', msgType)
+    } else {
+      formData.append('messageType', 'text')
+    }
+    if (content) {
+      formData.append('content', content)
+    }
 
     return this.client.post(`/chat/${conversationId}/message`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: options?.onUploadProgress,
     })
   }
 

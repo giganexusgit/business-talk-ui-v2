@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { CheckCheck, RefreshCw } from 'lucide-react'
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
@@ -18,6 +18,11 @@ import {
   selectIsFetchingMore,
   selectHasMoreNotifications,
 } from '@/redux/selectors/notificationSelectors'
+import { useQueryClient } from '@tanstack/react-query'
+import {
+  updateConnectionCacheOnAccept,
+  updateConnectionCacheOnDelete,
+} from '@/hooks/useFollow'
 import { NotificationList } from '@/components/notifications/NotificationList'
 import { useRouter } from 'next/navigation'
 import { resolveNotificationRoute } from '@/lib/notificationRegistry'
@@ -118,21 +123,31 @@ export default function NotificationsPage() {
     )
   }
 
+  const queryClient = useQueryClient()
+  const currentUserId = useAppSelector((state) => String(state.auth?.user?.id || ''))
+
   const handleConnectionRequestAction = useCallback(
     async (notificationId: string, requestId: string, action: 'accept' | 'delete') => {
+      const n = notifications.find((x: NotificationEntity) => x.id === notificationId)
+      const targetUserId = String(n?.actor?.id || '')
       try {
         if (action === 'accept') {
+          updateConnectionCacheOnAccept(queryClient, currentUserId, targetUserId)
           await apiClient.acceptConnectionRequest(requestId)
         } else {
+          updateConnectionCacheOnDelete(queryClient, currentUserId, targetUserId)
           await apiClient.deleteConnectionRequest(requestId)
         }
 
         dispatch(removeNotification(notificationId))
       } catch (err) {
         console.error(`Failed to ${action} connection request`, err)
+        if (action === 'accept') {
+          updateConnectionCacheOnDelete(queryClient, currentUserId, targetUserId)
+        }
       }
     },
-    [dispatch],
+    [dispatch, notifications, queryClient, currentUserId],
   )
 
   // ── Filter ────────────────────────────────────────────────────────────────

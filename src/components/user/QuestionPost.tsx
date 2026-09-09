@@ -23,6 +23,7 @@ import ExpandableText from '@/components/common/ExpandableText'
 import { useRouter } from 'next/navigation'
 import { profileHref } from '@/lib/profile-link'
 import { ShareModal } from '@/components/shared/ShareModal'
+import { HashtagList } from '@/lib/hashtag'
 import { TagsPopup } from '@/components/shared/TagsPopup'
 import { useOpenContent } from '@/hooks/useOpenContent'
 import apiClient from '@/lib/api-client'
@@ -828,21 +829,8 @@ export function QuestionPost({
         {/* Tags */}
         {displayTags.length > 0 && (
           <div className="flex items-center gap-2 mb-4 mt-2">
-            <Tag className="w-4 h-4" />
-            <div className="flex flex-wrap gap-2">
-              {displayTags.map((tag, idx) => (
-                <span 
-                  key={idx} 
-                  className="px-3 py-1 rounded-full text-sm font-medium"
-                  style={{ 
-                    backgroundColor: '#F3F4F6',
-                    color: '#5F6368' 
-                  }}
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
+            <Tag className="w-4 h-4 text-gray-400" />
+            <HashtagList tags={displayTags} badgeStyle />
           </div>
         )}
 

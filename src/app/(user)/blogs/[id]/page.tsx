@@ -9,6 +9,7 @@ import { TagsPopup } from '@/components/shared/TagsPopup'
 import apiClient from '@/lib/api-client'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 import RichTextContent from '@/components/common/RichTextContent'
+import { HashtagList } from '@/lib/hashtag'
 import BasicEditor from '@/components/editor/BasicEditor'
 import { validateImageFile } from '@/lib/utils'
 
@@ -484,7 +485,12 @@ export default function BlogDetailsPage() {
             </button>
           </div>
         </div>
-        <RichTextContent className="mb-8 whitespace-pre-wrap break-words" html={blog.content} />
+        <RichTextContent className="mb-6" html={blog.content} />
+
+        {/* Hashtags displayed after content */}
+        <div className="mb-8">
+          <HashtagList tags={blog.category} badgeStyle />
+        </div>
 
         {/* ================== 🆕 COMMENTS LIST ================== */}
         {comments.length > 0 && (

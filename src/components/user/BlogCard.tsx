@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { profileHref } from '@/lib/profile-link'
 import ExpandableText from '@/components/common/ExpandableText'
+import { HashtagList } from '@/lib/hashtag'
 
 interface BlogCardProps {
   blog: {
@@ -12,6 +13,7 @@ interface BlogCardProps {
       id?: string | number;
       name?: string;
       avatar?: string;
+      title?: string;
     };
     created_at?: string;
     image?: string;
@@ -19,94 +21,77 @@ interface BlogCardProps {
   };
 }
 
-const normalizeTags = (value: BlogCardProps['blog']['tags']): string[] => {
-  if (!value) return []
-
-  if (Array.isArray(value)) {
-    return value
-      .map((tag) => (typeof tag === 'string' ? tag : tag?.name || ''))
-      .map((tag) => tag.trim())
-      .filter(Boolean)
-  }
-
-  if (typeof value === 'string') {
-    return value
-      .split(',')
-      .map((tag) => tag.trim())
-      .filter(Boolean)
-      .map((tag) => tag.replace(/^#+/, ''))
-  }
-
-  return []
-}
-
 const BlogCard: React.FC<BlogCardProps> = ({ blog }) => {
-  const tags = normalizeTags(blog.tags)
-
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+    <article className="group rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md hover:border-gray-300">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
         {blog.image && (
-          <div className="shrink-0 overflow-hidden rounded-xl border border-gray-200 sm:w-40 sm:h-32">
+          <Link href={`/blogs/${blog.id}`} className="shrink-0 overflow-hidden rounded-xl border border-gray-100 sm:w-48 sm:h-36 block">
             <img
               src={blog.image}
               alt={blog.title}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
-          </div>
+          </Link>
         )}
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{blog.title}</h3>
-              {tags.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {tags.slice(0, 4).map((tag, index) => (
-                    <Link
-                      key={`${tag}-${index}`}
-                      href={`/blogs?search=${encodeURIComponent(tag)}`}
-                      className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 transition"
-                    >
-                      #{tag}
-                    </Link>
-                  ))}
-                </div>
-              )}
+        <div className="min-w-0 flex-1 flex flex-col justify-between">
+          <div>
+            <Link href={`/blogs/${blog.id}`} className="block group-hover:text-blue-600 transition-colors">
+              <h3 className="text-xl font-bold text-gray-900 tracking-tight leading-snug line-clamp-2">
+                {blog.title}
+              </h3>
+            </Link>
+
+            {blog.content && (
+              <div className="mt-2.5">
+                <ExpandableText className="text-sm leading-relaxed text-gray-600" lines={3}>
+                  {blog.content}
+                </ExpandableText>
+              </div>
+            )}
+
+            {/* Hashtags displayed AFTER content preview */}
+            <div className="mt-3">
+              <HashtagList tags={blog.tags} badgeStyle maxDisplay={4} />
             </div>
           </div>
 
-          {blog.content && (
-            <div className="mt-3">
-              <ExpandableText className="text-sm leading-6 text-gray-600 whitespace-pre-wrap break-words" lines={3}>{blog.content}</ExpandableText>
-            </div>
-          )}
-
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm">
-            <div className="flex items-center gap-2 text-gray-500">
-              {blog.author?.name && (
-                <span>
-                  By{' '}
-                  {blog.author?.id ? (
-                    <Link href={profileHref(blog.author.id, blog.author.name)} className="font-medium text-gray-700 hover:underline">
-                      {blog.author.name}
-                    </Link>
-                  ) : (
-                    <span className="font-medium text-gray-700">{blog.author.name}</span>
-                  )}
+          <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 text-sm">
+            <div className="flex items-center gap-3">
+              {blog.author && (
+                <Link
+                  href={blog.author?.id ? profileHref(blog.author.id, blog.author.name) : '#'}
+                  className="flex items-center gap-2 group/author shrink-0"
+                >
+                  <img
+                    src={blog.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(blog.author?.name || 'User')}`}
+                    alt={blog.author?.name || 'Author'}
+                    className="w-7 h-7 rounded-full object-cover border border-gray-200"
+                  />
+                  <span className="font-semibold text-xs text-gray-800 group-hover/author:underline">
+                    {blog.author?.name || 'Anonymous'}
+                  </span>
+                </Link>
+              )}
+              {blog.created_at && <span className="text-gray-300">•</span>}
+              {blog.created_at && (
+                <span className="text-xs text-gray-500 font-medium">
+                  {new Date(blog.created_at).toLocaleDateString()}
                 </span>
               )}
-              {blog.created_at && <span>•</span>}
-              {blog.created_at && <span>{new Date(blog.created_at).toLocaleDateString()}</span>}
             </div>
 
-            <Link href={`/blogs/${blog.id}`} className="font-medium text-blue-600 hover:text-blue-700 hover:underline">
-              Read More
+            <Link
+              href={`/blogs/${blog.id}`}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+            >
+              Read Article →
             </Link>
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 

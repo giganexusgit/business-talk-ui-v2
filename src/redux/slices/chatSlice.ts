@@ -1,4 +1,4 @@
-﻿import {
+import {
   createSlice,
   createAsyncThunk,
   type PayloadAction,
@@ -176,11 +176,37 @@ export const sendMessage = createAsyncThunk(
       conversationId,
       content,
       tempId,
-    }: { conversationId: string; content: string; tempId: string },
+      file,
+      onUploadProgress,
+    }: {
+      conversationId: string;
+      content: string;
+      tempId: string;
+      file?: File;
+      onUploadProgress?: (progress: number) => void;
+    },
     { rejectWithValue },
   ) => {
     try {
-      const res = await apiClient.sendMessage(conversationId, content);
+      let res: any;
+      if (file) {
+        res = await apiClient.sendMessageWithAttachment(
+          conversationId,
+          content,
+          file,
+          {
+            onUploadProgress: (event: any) => {
+              if (event.total && onUploadProgress) {
+                const percent = Math.round((event.loaded * 100) / event.total);
+                onUploadProgress(percent);
+              }
+            },
+          },
+        );
+      } else {
+        res = await apiClient.sendMessage(conversationId, content);
+      }
+
       if (!isRawMessageContract(res.data)) {
         return rejectWithValue({
           tempId,

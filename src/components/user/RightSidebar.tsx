@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { profileHref } from '@/lib/profile-link'
 import apiClient from '@/lib/api-client'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
+import { useFollow } from '@/hooks/useFollow'
 import RichTextContent from '../common/RichTextContent'
 
 interface SuggestedGroup {
@@ -83,14 +84,42 @@ export function TrendingItem({
 export function UserCard({
   person,
   onProfileClick,
-  connectState,
-  onConnectClick,
 }: {
   person: any
   onProfileClick: (person: any) => void
-  connectState: 'connect' | 'pending' | 'connected'
-  onConnectClick: (person: any, state: 'connect' | 'pending' | 'connected') => void
 }) {
+  const {
+    state: followState,
+    loading: followLoading,
+    follow,
+    unfollow,
+    acceptConnection,
+    cancelConnection,
+  } = useFollow(String(person.id || ''))
+
+  const handleAction = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (followLoading) return
+
+    if (followState === 'connect') {
+      await follow()
+    } else if (followState === 'pending') {
+      await cancelConnection()
+    } else if (followState === 'incoming') {
+      await acceptConnection()
+    } else if (followState === 'connected') {
+      await unfollow()
+    }
+  }
+
+  const label =
+    followLoading ? 'Loading...' :
+    followState === 'connected' ? 'Connected' :
+    followState === 'pending' ? 'Requested' :
+    followState === 'incoming' ? 'Accept' :
+    'Connect'
+
   return (
     <div className="flex items-center gap-3 fade-in-card">
       <img
@@ -106,18 +135,19 @@ export function UserCard({
         <p className="text-xs text-gray-500 truncate">{person.profession || person.title || 'User'}</p>
       </div>
       <button
-        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 flex-shrink-0 border active:scale-95 cursor-pointer ${
-          connectState === 'connected'
+        disabled={followLoading}
+        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 flex-shrink-0 border active:scale-95 cursor-pointer disabled:opacity-60 ${
+          followState === 'connected'
             ? 'bg-[#212529] text-white border-[#212529] hover:bg-[#3D3D3D]'
-            : connectState === 'pending'
+            : followState === 'pending'
             ? 'bg-amber-50 text-amber-700 border-amber-400 hover:bg-red-50 hover:text-red-700 hover:border-red-500'
+            : followState === 'incoming'
+            ? 'bg-green-50 text-green-700 border-green-600 hover:bg-green-100'
             : 'bg-transparent text-[#212529] border-[#212529] hover:bg-gray-100'
         }`}
-        onClick={() => onConnectClick(person, connectState)}
+        onClick={handleAction}
       >
-        {connectState === 'connect' && 'Connect'}
-        {connectState === 'pending' && 'Requested'}
-        {connectState === 'connected' && 'Connected'}
+        {label}
       </button>
     </div>
   );
@@ -252,7 +282,6 @@ export function RightSidebar() {
   const [stories, setStories] = useState<any[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
   const [groups, setGroups] = useState<SuggestedGroup[]>([]);
-  const [connectStates, setConnectStates] = useState<{ [id: string]: 'connect' | 'pending' | 'connected' }>({});
   const [joinStates, setJoinStates] = useState<{ [id: string]: 'join' | 'requested' | 'joined' }>({});
   const [isMobile, setIsMobile] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -299,13 +328,6 @@ export function RightSidebar() {
           .filter((p: any) => (p.post_type || p.type)?.toUpperCase() === 'QUESTION')
           .sort((a: any, b: any) => (b.hot_score || 0) - (a.hot_score || 0));
         setQuestions(questionPosts.slice(0, 5));
-        // Setup connect/join states
-        setConnectStates(
-          (peopleRes.data || []).reduce((acc: any, p: any) => {
-            acc[p.id] = 'connect';
-            return acc;
-          }, {})
-        );
         setJoinStates(
           formattedGroups.reduce((acc: any, g: SuggestedGroup) => {
             acc[g.id] = g.hasPendingRequest ? 'requested' : 'join';
@@ -385,24 +407,6 @@ export function RightSidebar() {
     router.push(profileHref(person.id, person.name));
   };
 
-  const handleConnectClick = (person: any, state: 'connect' | 'pending' | 'connected') => {
-    if (!requireAuth()) return
-    setConnectStates(prev => {
-      if (state === 'connect') {
-        setTimeout(() => {
-          setConnectStates(p => ({ ...p, [person.id]: 'connected' }));
-        }, 1000);
-        return { ...prev, [person.id]: 'pending' };
-      } else if (state === 'connected') {
-        setTimeout(() => {
-          setConnectStates(p => ({ ...p, [person.id]: 'connect' }));
-        }, 1000);
-        return { ...prev, [person.id]: 'pending' };
-      }
-      return prev;
-    });
-  };
-
   const handleGroupClick = (group: any) => {
     if (!requireAuth()) return
     router.push(`/groups/${group.id}`);
@@ -460,7 +464,7 @@ export function RightSidebar() {
   if (loading) return <div className="p-6">Loading SideBar...</div>
 
   return (
-    <aside className="w-80 bg-white overflow-y-auto rounded-2xl shadow-sm sticky top-4 max-h-[calc(100vh-2rem)]" style={{ borderLeft: '1px solid #E8E8E8' }}>
+    <aside className="w-80 shrink-0 bg-white overflow-y-auto rounded-2xl shadow-sm border border-gray-200/80 sticky top-6 self-start max-h-[calc(100vh-3rem)]">
       <div className="p-6 space-y-6">
         {/* Trending Header */}
         <div>
@@ -535,8 +539,6 @@ export function RightSidebar() {
                 key={person.id}
                 person={person}
                 onProfileClick={handleProfileClick}
-                connectState={connectStates[person.id] || 'connect'}
-                onConnectClick={handleConnectClick}
               />
             ))}
           </div>

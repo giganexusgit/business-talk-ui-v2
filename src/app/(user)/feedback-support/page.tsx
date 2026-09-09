@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { MessageSquare, Bug, Lightbulb, AlertCircle, CheckCircle } from 'lucide-react'
 import apiClient from '@/lib/api-client'
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/constants'
 
 const TYPES = [
   { value: 'bug',        label: 'Bug Report',   icon: Bug,          desc: 'Something is broken or not working as expected', color: '#DC3545' },
@@ -176,11 +177,11 @@ export default function FeedbackSupportPage() {
               <p className="text-sm font-semibold mb-1" style={{ color: '#212529' }}>Need urgent help?</p>
               <p className="text-sm" style={{ color: '#5F6368' }}>
                 Email us directly at{' '}
-                <a href="mailto:support@businesstalk24.com" className="font-medium transition-colors"
+                <a href={SUPPORT_MAILTO} className="font-medium transition-colors underline"
                   style={{ color: '#1976D2' }}
                   onMouseEnter={e => (e.currentTarget.style.color = '#1565C0')}
                   onMouseLeave={e => (e.currentTarget.style.color = '#1976D2')}>
-                  support@businesstalk24.com
+                  {SUPPORT_EMAIL}
                 </a>
               </p>
             </div>

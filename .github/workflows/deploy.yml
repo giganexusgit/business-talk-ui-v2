@@ -1,0 +1,81 @@
+name: Build & Deploy Frontend (Hostinger VPS)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── 1. CI: Build, Lint & Verify ───────────────────────────────────────
+  build-and-verify:
+    name: Build & Verify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: './package-lock.json'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Next.js Application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api' }}
+          NEXT_PUBLIC_WS_URL: ${{ secrets.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000/ws' }}
+
+  # ─── 2. CD: Deploy to Hostinger VPS via SSH ─────────────────────────────
+  deploy:
+    name: Deploy to Hostinger VPS
+    needs: build-and-verify
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Execute Remote Deployment Commands via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: ${{ secrets.HOSTINGER_PORT || 22 }}
+          script_stop: true
+          script: |
+            echo "🚀 Navigating to application directory: ${{ secrets.HOSTINGER_APP_PATH }}"
+            cd ${{ secrets.HOSTINGER_APP_PATH }}
+
+            echo "📦 Fetching latest changes from Git..."
+            git fetch --all
+            git reset --hard origin/$(git rev-parse --abbrev-ref HEAD)
+
+            echo "📥 Installing dependencies..."
+            npm ci
+
+            echo "🔨 Building Next.js application..."
+            npm run build
+
+            echo "🔄 Restarting UI via PM2..."
+            if pm2 describe business-talk-ui > /dev/null 2>&1; then
+              pm2 reload ecosystem.config.js --env production
+            else
+              pm2 start ecosystem.config.js --env production
+            fi
+
+            pm2 save
+            echo "✅ Frontend deployment finished successfully!"

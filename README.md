@@ -1,408 +1,88 @@
-# Businesstalk24 Platform UI
+# 🌐 BusinessTalk24 — Modern Web Experience & Client Portal
 
-A production-ready SaaS platform UI for professional networking, built with Next.js 15, React, TypeScript, and Tailwind CSS.
+<p align="center">
+  <strong>The intuitive, responsive, and high-performance frontend interface for modern business networking and enterprise collaboration.</strong>
+</p>
 
-## 🚀 Features
-
-### Authentication System
-- **Login Page**: Email/password authentication with Google OAuth
-- **Signup Page**: User registration with form validation
-- **Complete Profile Flow**: Post-signup profile completion with profile photo, skills, and experience
-- **Protected Routes**: Role-based access control (USER/ADMIN)
-
-### User Dashboard
-- **Dashboard**: Welcome section with stats cards, feed, and suggested users
-- **Profile**: Editable user profile with skills, experience, and bio
-- **Messages**: Real-time chat interface with WebSocket support
-- **People**: User discovery and connection system
-- **Groups**: Create and join groups with other professionals
-- **Blogs**: Read and write blogs within the platform
-- **Notifications**: Real-time notifications for likes, comments, follows
-- **Settings**: Account, privacy, notifications, and connection settings
-
-### Admin Dashboard
-- **Dashboard**: KPI cards, charts (User Growth, Revenue, Roles Distribution), and activity logs
-- **Users Management**: Complete user management with search, filtering, sorting, and CRUD operations
-- **Posts**: Manage and moderate user posts
-- **Moderation**: Content moderation queue for flagged content
-- **Stories**: Manage user stories
-- **Blogs**: Manage blog content
-- **Reports**: Handle user reports and moderation actions
-- **Email Marketing**: Campaign management interface
-- **Notifications**: Admin notification management
-- **Advertisements**: Ad creation and tracking
-- **Analytics**: Advanced analytics and insights
-- **Revenue**: Revenue tracking and management
-- **Roles**: Role-based access control management
-- **Settings**: System configuration
-
-### Legal Pages
-- **Privacy Policy**: Comprehensive privacy policy
-- **User Agreement**: Terms of service and user agreements
-
-## 📁 Project Structure
-
-```
-src/
-├── app/
-│   ├── (auth)/
-│   │   ├── login/
-│   │   ├── signup/
-│   │   ├── complete-profile/
-│   │   ├── forgot-password/
-│   │   ├── reset-password/
-│   │   ├── google-success/
-│   │   └── layout.tsx
-│   ├── (user)/
-│   │   ├── dashboard/
-│   │   ├── profile/
-│   │   │   ├── components/
-│   │   │   └── [id]/
-│   │   ├── messages/
-│   │   ├── people/
-│   │   ├── groups/
-│   │   ├── blogs/
-│   │   ├── posts/
-│   │   ├── stories/
-│   │   ├── questions/
-│   │   ├── drafts/
-│   │   ├── feedback-support/
-│   │   ├── notifications/
-│   │   └── settings/
-│   ├── (admin)/
-│   │   └── admin/
-│   │       ├── dashboard/
-│   │       ├── users/
-│   │       ├── posts/
-│   │       ├── stories/
-│   │       ├── blogs/
-│   │       ├── reports/
-│   │       ├── notifications/
-│   │       ├── analytics/
-│   │       ├── roles/
-│   │       ├── revenue/
-│   │       ├── feedback/
-│   │       ├── profile/
-│   │       ├── questions/
-│   │       └── settings/
-│   ├── (legal)/
-│   │   ├── about/
-│   │   ├── community-guidelines/
-│   │   ├── disclaimer/
-│   │   ├── privacy-policy/
-│   │   ├── terms-of-service/
-│   │   ├── user-agreement/
-│   │   └── layout.tsx
-│   ├── account-restricted/
-│   ├── invite/
-│   ├── globals.css
-│   ├── globals.css.d.ts
-│   ├── layout.tsx
-│   ├── page.tsx
-│   └── providers.tsx
-├── components/
-│   ├── shared/
-│   │   ├── viewer-cards/
-│   │   ├── Button.tsx
-│   │   ├── Input.tsx
-│   │   ├── Card.tsx
-│   │   ├── UserSidebar.tsx
-│   │   ├── UserNavbar.tsx
-│   │   ├── UserLayoutWrapper.tsx
-│   │   ├── AdminSidebar.tsx
-│   │   ├── AdminNavbar.tsx
-│   │   ├── AdminLayoutWrapper.tsx
-│   │   ├── MediaGrid.tsx
-│   │   ├── MergedMobileSidebarContent.tsx
-│   │   ├── MobileSidebar.tsx
-│   │   ├── ReportModal.tsx
-│   │   ├── ShareModal.tsx
-│   │   └── TagsPopup.tsx
-│   ├── auth/
-│   ├── dashboard/
-│   ├── admin/
-│   ├── tables/
-│   ├── charts/
-│   ├── notifications/
-│   └── user/
-├── redux/
-│   ├── store.ts
-│   ├── middleware/
-│   ├── selectors/
-│   └── slices/
-│       ├── authSlice.ts
-│       ├── chatSlice.ts
-│       ├── notificationsSlice.ts
-│       └── pushSlice.ts
-├── hooks/
-│   ├── useAdminBlogs.ts
-│   ├── useAdminPosts.ts
-│   ├── useAdminQuestions.ts
-│   ├── useAdminStories.ts
-│   ├── useContentViewer.ts
-│   ├── useConversations.ts
-│   ├── useFeedPosts.ts
-│   ├── useFollow.ts
-│   ├── useGroups.ts
-│   ├── useInfiniteMessages.ts
-│   ├── useNotifications.ts
-│   ├── useOpenContent.ts
-│   ├── usePosts.ts
-│   ├── useProfile.ts
-│   ├── useRedux.ts
-│   ├── useSavedStatus.ts
-│   ├── useStoriesFeed.ts
-│   ├── useStoryComments.ts
-│   ├── useStoryLike.ts
-│   └── useUsers.ts
-├── lib/
-│   ├── admin-api.ts
-│   ├── api-client.ts
-│   ├── auth-errors.ts
-│   ├── fcm.ts
-│   ├── firebase.ts
-│   ├── mockData.ts
-│   ├── notificationRegistry.tsx
-│   ├── roles.ts
-│   ├── utils.ts
-│   ├── validations.ts
-│   ├── websocket.ts
-│   └── chat/
-├── providers/
-│   ├── ContentViewerProvider.tsx
-│   ├── PushNotificationProvider.tsx
-│   └── WebSocketProvider.tsx
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── IMPLEMENTATION_CHECKLIST.md
-│   ├── INDEX.md
-│   ├── INTEGRATION_EXAMPLES.tsx
-│   ├── QUICK_START.md
-│   ├── ROUTING_STRUCTURE.ts
-│   ├── SYSTEM_SUMMARY.md
-│   └── UNIVERSAL_VIEWER_README.md
-└── types/
-  ├── chat.ts
-  ├── index.ts
-  ├── notification.ts
-  └── profile.ts
-```
-
-## 🛠️ Tech Stack
-
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
-- **UI Library**: React 18
-- **Styling**: Tailwind CSS
-- **State Management**: Redux Toolkit
-- **Forms**: React Hook Form + Zod
-- **HTTP Client**: Axios
-- **Real-time**: WebSocket
-- **Charts**: Recharts
-- **Icons**: Lucide React
-- **Utilities**: clsx, tailwind-merge
-
-## 📦 Installation & Setup
-
-### Prerequisites
-- Node.js 18+ and npm
-
-### Installation
-
-1. **Install dependencies**:
-```bash
-npm install
-```
-
-2. **Configure environment variables**:
-Create a `.env.local` file:
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000/api
-NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws
-```
-
-3. **Start development server**:
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Build for Production
-```bash
-npm run build
-npm start
-```
-
-## 🔐 Authentication Flow
-
-1. User signs up → Create account with email/password
-2. Redirect to `/complete-profile` → Fill profile information
-3. Redirect to `/dashboard` → Access user features
-4. Admin users redirect to `/admin/dashboard`
-
-## 🔄 State Management (Redux)
-
-### Auth Slice
-- `user`: Current user information
-- `token`: Authentication token
-- `isAuthenticated`: Boolean flag
-- `isLoading`: Loading state
-- `error`: Error messages
-
-### Posts Slice
-- `posts`: Array of posts
-- `isLoading`: Loading state
-- `error`: Error messages
-
-### Notifications Slice
-- `notifications`: Array of notifications
-- `unreadCount`: Count of unread notifications
-
-### Messages Slice
-- `conversations`: Array of conversations
-- `currentConversation`: Current chat messages
-
-## 🌐 API Integration
-
-The `api-client.ts` provides methods for:
-- Authentication (login, signup)
-- Users (profile, follow, search)
-- Posts (CRUD, like)
-- Messages (send, retrieve)
-- Blogs (read, write)
-- Admin operations
-- Notifications
-- And more...
-
-## 🔌 WebSocket Integration
-
-The `websocket.ts` utility handles:
-- Real-time messaging
-- Live notifications
-- Admin alerts
-- Connection management with auto-reconnect
-
-**Usage**:
-```typescript
-import WebSocketManager from '@/lib/websocket'
-
-const ws = new WebSocketManager() await ws.connect()
-ws.on('message', (data) => console.log(data))
-ws.send('chat', { userId: '123', message: 'Hello' })
-```
-
-## 📋 Form Validation
-
-Validation schemas are defined in `lib/validations.ts` using Zod:
-- `LoginSchema`
-- `SignupSchema`
-- `CompleteProfileSchema`
-- `CreatePostSchema`
-- `MessageSchema`
-- `CreateBlogSchema`
-
-## 🎨 Styling
-
-### Tailwind CSS Configuration
-- Custom color palette with `primary` and `secondary` colors
-- Responsive design utilities
-- Custom components (buttons, cards, badges)
-- Animations and transitions
-
-### Available Utility Classes
-- `.btn-primary`, `.btn-secondary`, `.btn-outline`, `.btn-danger`
-- `.card`
-- `.input-field`
-- `.label`
-
-## 📱 Responsive Design
-
-- Mobile-first approach
-- Breakpoints: `sm` (640px), `md` (768px), `lg` (1024px), `xl` (1280px)
-- Mobile navigation with hamburger menu
-- Sidebar collapses on small screens
-
-## 🧪 Code Quality
-
-- TypeScript for type safety
-- ESLint configuration for code linting
-- Proper error handling
-- Loading states and skeleton loaders
-- Accessible UI components
-
-## 📚 Key Components
-
-### Button
-```tsx
-<Button variant="primary|secondary|outline|danger" size="sm|md|lg" isLoading={false}>
-  Click me
-</Button>
-```
-
-### Input
-```tsx
-<Input 
-  type="text|email|password"
-  label="Field Label"
-  error="Error message"
-  helpText="Help text"
-/>
-```
-
-### Card
-```tsx
-<Card padding="none|sm|md|lg" border hover>
-  Content
-</Card>
-```
-
-### Badge
-```tsx
-<Badge variant="primary|secondary|success|warning|danger" size="sm|md|lg">
-  Label
-</Badge>
-```
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-```bash
-vercel
-```
-
-### Docker
-```bash
-docker build -t businesstalk24 .
-docker run -p 3000:3000 businesstalk24
-```
-
-## 📝 Environment Variables
-
-| Variable | Description | Example |
-|----------|------------|---------|
-| `NEXT_PUBLIC_API_URL` | Backend API base URL | `http://localhost:8000/api` |
-| `NEXT_PUBLIC_WS_URL` | WebSocket URL | `ws://localhost:8000/ws` |
-
-## 🔧 Development Tips
-
-1. **Use Redux DevTools**: Install Redux DevTools browser extension
-2. **Component Development**: Use `npm run dev` for hot reload
-3. **API Testing**: Use Postman or Insomnia to test the backend API
-4. **WebSocket Testing**: Use WebSocket client tools
-
-## 📄 License
-
-© 2024 Businesstalk24. All rights reserved.
-
-## 👥 Contributing
-
-Contributions are welcome! Please follow the existing code style and conventions.
-
-## 📞 Support
-
-For support, email support@businesstalk24.com
+<p align="center">
+  <img src="https://img.shields.io/badge/Interface-Next.js%20%7C%20React-blue?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/Design-Modern%20%26%20Responsive-teal?style=for-the-badge" alt="Design" />
+  <img src="https://img.shields.io/badge/Experience-Real--Time%20Interactive-purple?style=for-the-badge" alt="Interactive" />
+</p>
 
 ---
 
-**Built with ❤️ for professionals**
+## 📌 Executive Overview
+
+The **BusinessTalk24 Web Portal** provides an elegant, distraction-free environment for professionals to expand their network, engage with thought leaders, and conduct real-time business communication.
+
+Built with modern web standards, it delivers instantaneous page transitions, seamless desktop and mobile adaptability, and interactive real-time updates that keep business leaders connected to opportunities 24/7.
+
+---
+
+## 🛑 Problem Statement: The User Experience We Elevate
+
+| Common Web Platform Issue | How BusinessTalk24 UI Delivers |
+| :--- | :--- |
+| **Cluttered, Noisy Interfaces** | Clean, minimalist design emphasizing content clarity, fast readability, and effortless navigation. |
+| **Sluggish & Stale Feeds** | Real-time WebSocket connection ensures live message alerts, active stories, and discussions update without manual refreshes. |
+| **Poor Mobile Adaptability** | Adaptive layout crafted for desktop monitors, tablets, and smartphones alike. |
+| **Disorganized Communication** | Dedicated tabs for direct chats, community spaces, and categorized notifications for instant accessibility. |
+
+---
+
+## ✨ Key User Experience Highlights
+
+```
+                    ┌─────────────────────────────────────────┐
+                    │      BusinessTalk24 Web Experience      │
+                    └────────────────────┬────────────────────┘
+                                         │
+    ┌───────────────────────┬────────────┴───────────┬───────────────────────┐
+    ▼                       ▼                        ▼                       ▼
+👥 People & Discovery   💬 Real-Time Chat Suite  ✍️ Publishing & Media   🏢 Communities & Groups
+ • 1-Click Connect       • Instant Messenger      • Interactive Stories   • Public & Private Hubs
+ • Filter by Industry    • Rich Media Sharing     • WYSIWYG Blog Editor   • Role-Based Governance
+ • Profile Showcase      • Live Presence Status   • Q&A & Thread Voting   • Discussion Boards
+```
+
+### 1. 🤝 People & Discovery Portal
+- **One-Click Networking**: Explore personalized suggestions, mutual connections, and send requests effortlessly.
+- **Rich Professional Profiles**: Highlight bios, company milestones, contact details, and social links.
+
+### 2. 💬 Interactive Real-Time Chat Suite
+- **Modern Messaging UI**: Fluid conversation window with instant message delivery, timestamps, and read receipts.
+- **Media Previews**: Embedded image and document viewers for quick review of proposals and decks.
+
+### 3. ✍️ Publishing Studio (Blogs, Stories & Q&A)
+- **Visual Business Stories**: High-engagement visual story viewer for quick company updates and announcements.
+- **Rich Article Editor**: WYSIWYG formatting tools to publish authoritative business blogs and articles.
+- **Interactive Q&A Hub**: Community-driven problem solving with upvoting, verified answers, and clean comment trees.
+
+### 4. 🏢 Groups & Masterminds
+- Dedicated community spaces for industry verticals, alumni networks, and private mastermind cohorts.
+
+### 5. 🛡️ Comprehensive Admin & Moderation Console
+- Intuitive management dashboard for moderating posts, managing reports, verifying users, and reviewing community safety.
+
+---
+
+## 📈 Key Advantages for Clients & Users
+
+* 🎯 **Maximum Engagement**: Modern social dynamics encourage frequent return visits and collaborative interactions.
+* 📱 **Universal Accessibility**: Optimized across all modern browsers and device form factors.
+* ⚡ **Ultra-Fast Performance**: Pre-rendered pages and instant hydration ensure zero loading lag.
+
+---
+
+## 🚀 Future Roadmap & Innovations
+
+- [ ] **AI-Assisted Content Composer**: Intelligent drafting tools to help founders write compelling posts and articles.
+- [ ] **Interactive Video Rooms**: Built-in video calling and webinar broadcasting directly within group spaces.
+- [ ] **Personalized Business Feed**: Machine-learning driven timeline tailored to each user's industry and interests.
+
+---
+
+<p align="center">
+  <sub>© 2026 BusinessTalk24. All rights reserved. Crafted for intuitive enterprise experiences.</sub>
+</p>

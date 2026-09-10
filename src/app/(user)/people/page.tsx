@@ -9,7 +9,7 @@ import {
   Briefcase,
   TrendingUp,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useUsers } from '@/hooks/useUsers'
 import { useFollow } from '@/hooks/useFollow'
 import { useAppSelector } from '@/hooks/useRedux'
@@ -227,9 +227,12 @@ export default function PeoplePage() {
   const [appliedLocation, setAppliedLocation] = useState('')
   const [appliedCompany, setAppliedCompany] = useState('')
 
+  const [visibleCount, setVisibleCount] = useState(6)
+
   const handleApplyFilter = () => {
     setAppliedLocation(locationFilter)
     setAppliedCompany(companyFilter)
+    setVisibleCount(6)
   }
 
   const handleClearFilter = () => {
@@ -239,7 +242,12 @@ export default function PeoplePage() {
     setAppliedCompany('')
     setSearchQuery('')
     setSelectedCategory('All')
+    setVisibleCount(6)
   }
+
+  useEffect(() => {
+    setVisibleCount(6)
+  }, [searchQuery, selectedCategory, appliedLocation, appliedCompany])
 
   // 🔥 Filter users
   const filteredUsers = users.filter((u) => {
@@ -265,6 +273,8 @@ export default function PeoplePage() {
 
     return matchesSearch && matchesCategory && matchesLocation && matchesCompany;
   });
+
+  const visibleUsers = filteredUsers.slice(0, visibleCount);
 
   if (loading) return <div className="p-6">Loading users...</div>
 
@@ -423,7 +433,7 @@ export default function PeoplePage() {
         {/* People Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-          {filteredUsers.map((user) => (
+          {visibleUsers.map((user) => (
             <PeopleCard
               key={user.id}
               user={user}
@@ -435,11 +445,16 @@ export default function PeoplePage() {
         </div>
 
         {/* Load More */}
-        <div className="mt-8 text-center">
-          <button className="px-8 py-3 border rounded-xl text-gray-500 hover:bg-[#F8F9FA]">
-            Load More People
-          </button>
-        </div>
+        {visibleCount < filteredUsers.length && (
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => setVisibleCount((prev) => prev + 6)}
+              className="px-8 py-3 border rounded-xl text-gray-500 hover:bg-[#F8F9FA] transition-colors"
+            >
+              Load More People
+            </button>
+          </div>
+        )}
 
       </div>
     </div>

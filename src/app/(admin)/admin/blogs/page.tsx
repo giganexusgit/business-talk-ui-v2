@@ -389,13 +389,15 @@ export default function AdminBlogsPage() {
             />
           ))
         )}
-        <div className="flex justify-center mt-6">
-          <Button
-            onClick={() => setPage(prev => prev + 1)}
-          >
-            Load More
-          </Button>
-        </div>
+        {blogs.length >= limit && searchResults === null && (
+          <div className="flex justify-center mt-6">
+            <Button
+              onClick={() => setPage(prev => prev + 1)}
+            >
+              Load More
+            </Button>
+          </div>
+        )}
       </div>
 
       {showCreate && (

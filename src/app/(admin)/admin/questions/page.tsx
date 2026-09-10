@@ -342,13 +342,15 @@ export default function AdminQuestionsPage() {
                 return author.includes(ql) || content.includes(ql)
               })
               .map((q: any) => renderCard(q))}
-            <div className="flex justify-center mt-6">
-              <Button
-                onClick={() => setPage(prev => prev + 1)}
-              >
-                Load More
-              </Button>
-            </div>
+            {questions.length >= limit && searchResults === null && (
+              <div className="flex justify-center mt-6">
+                <Button
+                  onClick={() => setPage(prev => prev + 1)}
+                >
+                  Load More
+                </Button>
+              </div>
+            )}
           </>
         )}
       </div>

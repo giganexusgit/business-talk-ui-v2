@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios'
+import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'
@@ -818,7 +818,7 @@ class ApiClient {
   }
 
   // Update blog (ADMIN_BLOG only on backend)
-  updateBlog(id: string, data: FormData | Record<string, unknown>) {
+  updateBlog(id: string, data: FormData | Record<string, unknown>): Promise<AxiosResponse<any>> {
     if (data instanceof FormData) {
       return this.client.patch(`/blogs/${id}`, data, {
         headers: { 'Content-Type': 'multipart/form-data' },

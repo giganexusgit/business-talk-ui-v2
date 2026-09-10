@@ -2,9 +2,8 @@
 
 import { useRouter, useParams } from 'next/navigation'
 import { Lock, Globe, MessageCircle, Share2, ClipboardList, MapPin, X, Check, Image as ImageIcon, Video, Trash2 } from 'lucide-react'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { ShareModal } from '@/components/shared/ShareModal'
-import { useEffect } from 'react'
 import apiClient from '@/lib/api-client'
 import { FeedPost } from '@/components/user/FeedPost'
 import { profileHref } from '@/lib/profile-link'
@@ -197,58 +196,61 @@ export default function GroupDetailsPage() {
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
 
-  const fetchGroupFeed = async (
-    pageNumber = 1,
-    append = false
-  ) => {
-    if (!groupId) return
+  const fetchGroupFeed = useCallback(
+    async (
+      pageNumber = 1,
+      append = false
+    ) => {
+      if (!groupId) return
 
-    try {
-      if (pageNumber === 1) {
-        setFeedLoading(true)
-      } else {
-        setLoadingMore(true)
+      try {
+        if (pageNumber === 1) {
+          setFeedLoading(true)
+        } else {
+          setLoadingMore(true)
+        }
+
+        const res = await apiClient.getGroupFeed(
+          groupId,
+          pageNumber,
+          20
+        )
+
+        const items = extractFeedItems(res.data)
+
+        const mapped = items.map(mapGroupFeedPost)
+
+        setGroupFeed(prev =>
+          append
+            ? [...prev, ...mapped]
+            : mapped
+        )
+
+        setHasMore(
+          res.data?.hasMore ??
+          mapped.length === 20
+        )
+
+        setGroup(prev =>
+          prev
+            ? {
+                ...prev,
+                posts: extractFeedTotal(
+                  res.data,
+                  mapped.length
+                ),
+              }
+            : prev
+        )
+      } catch (err) {
+        console.error('Group feed fetch error', err)
+      } finally {
+        setFeedLoading(false)
+        setLoadingMore(false)
       }
-
-      const res = await apiClient.getGroupFeed(
-        groupId,
-        pageNumber,
-        20
-      )
-
-      const items = extractFeedItems(res.data)
-
-      const mapped = items.map(mapGroupFeedPost)
-
-      setGroupFeed(prev =>
-        append
-          ? [...prev, ...mapped]
-          : mapped
-      )
-
-      setHasMore(
-        res.data?.hasMore ??
-        mapped.length === 20
-      )
-
-      setGroup(prev =>
-        prev
-          ? {
-              ...prev,
-              posts: extractFeedTotal(
-                res.data,
-                mapped.length
-              ),
-            }
-          : prev
-      )
-    } catch (err) {
-      console.error('Group feed fetch error', err)
-    } finally {
-      setFeedLoading(false)
-      setLoadingMore(false)
-    }
-  }
+    },
+    [groupId]
+  )
 
 
   useEffect(() => {
@@ -257,7 +259,7 @@ export default function GroupDetailsPage() {
     setPage(1)
 
     fetchGroupFeed(1, false)
-  }, [groupId])
+  }, [groupId, fetchGroupFeed])
 
   // ── Media upload state ──────────────────────────────────────────────────
   const [mediaFiles, setMediaFiles] = useState<File[]>([])

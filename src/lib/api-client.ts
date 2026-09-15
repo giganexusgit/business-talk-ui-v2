@@ -926,30 +926,44 @@ class ApiClient {
     })
   }
 
-  sendMessageWithAttachment(
+  async sendMessageWithAttachment(
     conversationId: string,
     content: string,
     file?: File,
     options?: { onUploadProgress?: (progressEvent: any) => void }
   ) {
-    const formData = new FormData()
-    if (file) {
-      const isImage = file.type.startsWith('image/')
-      const isVideo = file.type.startsWith('video/')
-      const isAudio = file.type.startsWith('audio/')
-      const msgType = isImage ? 'image' : isVideo ? 'video' : isAudio ? 'audio' : 'file'
-      formData.append('file', file)
-      formData.append('messageType', msgType)
-    } else {
-      formData.append('messageType', 'text')
-    }
-    if (content) {
-      formData.append('content', content)
+    if (!file) {
+      return this.sendMessage(conversationId, content)
     }
 
-    return this.client.post(`/chat/${conversationId}/message`, formData, {
+    // 1. Upload attachment to /chat/:id/upload
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const uploadRes = await this.client.post(`/chat/${conversationId}/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: options?.onUploadProgress,
+    })
+
+    const attachment = uploadRes.data?.data || uploadRes.data
+    const attachmentId = attachment?.id
+
+    if (!attachmentId) {
+      throw new Error('Failed to upload message attachment')
+    }
+
+    // 2. Determine messageType
+    const isImage = file.type.startsWith('image/')
+    const isVideo = file.type.startsWith('video/')
+    const isAudio = file.type.startsWith('audio/')
+    const msgType = isImage ? 'image' : isVideo ? 'video' : isAudio ? 'audio' : 'file'
+
+    // 3. Send message referencing the pre-uploaded attachment ID
+    return this.client.post(`/chat/${conversationId}/message`, {
+      messageType: msgType,
+      attachmentIds: [attachmentId],
+      caption: content || undefined,
+      content: content || undefined,
     })
   }
 

@@ -24,7 +24,7 @@ interface FeedPostWithViewerProps {
 }
 
 export function FeedPostWithViewer({ 
-  id = Date.now().toString(),
+  id: propId,
   author, 
   content, 
   image, 
@@ -35,6 +35,11 @@ export function FeedPostWithViewer({
   sends,
   onViewerOpen
 }: FeedPostWithViewerProps) {
+  const fallbackIdRef = useRef<string | null>(null)
+  if (!fallbackIdRef.current) {
+    fallbackIdRef.current = 'post_' + Math.random().toString(36).slice(2)
+  }
+  const id = propId || fallbackIdRef.current
   const { open: openViewer } = useContentViewer()
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(likes)

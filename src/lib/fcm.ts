@@ -138,13 +138,20 @@ const registerTokenWithBackend = async (
 ): Promise<void> => {
   try {
     await apiClient.registerPushToken(token);
-  } catch (err) {
+  } catch (err: any) {
+    const status = err?.response?.status ?? err?.status;
+    if (status === 401 || status === 403) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[FCM] Skipped registering push token: user is unauthenticated (401/403)');
+      }
+      return;
+    }
     if (attempt < MAX_RETRIES - 1) {
       const delay = BASE_RETRY_DELAY_MS * 2 ** attempt;
       await new Promise((r) => setTimeout(r, delay));
       return registerTokenWithBackend(token, attempt + 1);
     }
-    console.error('[FCM] Backend token registration failed after retries:', err);
+    console.warn('[FCM] Backend token registration failed after retries:', err?.message ?? err);
   }
 };
 

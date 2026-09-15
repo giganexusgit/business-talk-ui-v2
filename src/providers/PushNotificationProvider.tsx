@@ -108,7 +108,7 @@ export const PushNotificationProvider: React.FC<{
   // Push preferences: check master switch (req 14 + preference gate)
   const pushEnabled = useAppSelector((s) => s.push.preferences.enabled);
   // Current user — only register when authenticated
-  const isAuthenticated = useAppSelector((s) => !!s.auth?.user);
+  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
 
   const [toasts, setToasts] = useState<FgToast[]>([]);
   const foregroundUnsubRef = useRef<(() => void) | null>(null);

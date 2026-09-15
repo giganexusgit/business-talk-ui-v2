@@ -79,13 +79,21 @@ export const requestPushPermission = createAsyncThunk<
   { token: string | null; permission: PushPermissionState },
   void,
   { rejectValue: string }
->('push/requestPermission', async (_, { rejectWithValue }) => {
-  const { registerForPushNotifications } = await import('@/lib/fcm');
-  const result = await registerForPushNotifications();
-  if (result.error && !result.token) {
-    return rejectWithValue(result.error);
+>('push/requestPermission', async (_, { getState, rejectWithValue }) => {
+  const authState = (getState() as { auth?: { isAuthenticated?: boolean } })?.auth;
+  if (!authState?.isAuthenticated) {
+    return rejectWithValue('User is not authenticated');
   }
-  return { token: result.token, permission: result.permission };
+  try {
+    const { registerForPushNotifications } = await import('@/lib/fcm');
+    const result = await registerForPushNotifications();
+    if (result.error && !result.token) {
+      return rejectWithValue(result.error);
+    }
+    return { token: result.token, permission: result.permission };
+  } catch (err: any) {
+    return rejectWithValue(err?.message ?? 'Failed to request permission');
+  }
 });
 
 /** Revoke push — unregister from FCM and backend. */
@@ -98,13 +106,22 @@ export const revokePushPermission = createAsyncThunk<void, void>(
 );
 
 /** Force-refresh the FCM token (req 19). */
-export const refreshPushTokenThunk = createAsyncThunk<string | null, void>(
-  'push/refreshToken',
-  async () => {
+export const refreshPushTokenThunk = createAsyncThunk<
+  string | null,
+  void,
+  { rejectValue: string }
+>('push/refreshToken', async (_, { getState, rejectWithValue }) => {
+  const authState = (getState() as { auth?: { isAuthenticated?: boolean } })?.auth;
+  if (!authState?.isAuthenticated) {
+    return null;
+  }
+  try {
     const { refreshPushToken } = await import('@/lib/fcm');
-    return refreshPushToken();
-  },
-);
+    return await refreshPushToken();
+  } catch (err: any) {
+    return rejectWithValue(err?.message ?? 'Failed to refresh push token');
+  }
+});
 
 /** Persist preference update to localStorage + (optionally) backend. */
 export const savePushPreferences = createAsyncThunk<
@@ -184,6 +201,11 @@ const pushSlice = createSlice({
         if (action.payload) {
           state.token = action.payload;
           state.isRegisteredWithBackend = true;
+        }
+      })
+      .addCase(refreshPushTokenThunk.rejected, (state, action) => {
+        if (action.payload) {
+          state.registrationError = action.payload;
         }
       })
 

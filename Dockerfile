@@ -1,42 +1,40 @@
-# Build stage
+# ─── Build Stage ─────────────────────────────────────────────────────────────
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy dependency definitions
 COPY package*.json ./
 
-# Install dependencies
+# Install all dependencies for build
 RUN npm ci
 
-# Copy source code
+# Copy application source
 COPY . .
 
-# Build the application
+# Build Next.js application
 RUN npm run build
 
-# Production stage
-FROM node:18-alpine
+# ─── Production Stage ────────────────────────────────────────────────────────
+FROM node:18-alpine AS runner
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-
-# Install production dependencies only
-RUN npm ci --only=production
-
-# Copy built application from builder
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/src ./src
-
-# Set environment
+# Set production environment
 ENV NODE_ENV=production
 ENV PORT=4001
 
-# Expose port
+# Copy package definitions and install production-only dependencies
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+# Copy built assets and configuration from builder
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.js ./next.config.js
+
+# Expose UI application port
 EXPOSE 4001
 
-# Start application
+# Start the Next.js server
 CMD ["npm", "start"]

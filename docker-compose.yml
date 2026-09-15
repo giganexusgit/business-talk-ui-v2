@@ -1,52 +1,23 @@
-version: '3.8'
-
 services:
-  # Businesstalk24 Platform UI
   ui:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: businesstalk-ui
+    restart: unless-stopped
     ports:
       - "4001:4001"
+    env_file:
+      - .env
     environment:
-      NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://localhost:8000/api
-      NEXT_PUBLIC_WS_URL: ws://localhost:8000/ws
-    volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
-    command: npm run dev
+      - NODE_ENV=production
+      - PORT=4001
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:4000}
+      - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-ws://localhost:4000}
+      - NEXT_PUBLIC_FRONTEND_URL=${NEXT_PUBLIC_FRONTEND_URL:-http://localhost:4001}
     networks:
       - businesstalk-network
-
-  # Optional: Mock API Server (replace with your actual backend)
-  # api:
-  #   image: your-backend-image
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     DATABASE_URL: postgresql://user:password@db:5432/businesstalk
-  #   networks:
-  #     - businesstalk-network
-  #   depends_on:
-  #     - db
-
-  # Optional: Database
-  # db:
-  #   image: postgres:15
-  #   environment:
-  #     POSTGRES_USER: user
-  #     POSTGRES_PASSWORD: password
-  #     POSTGRES_DB: businesstalk
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   networks:
-  #     - businesstalk-network
 
 networks:
   businesstalk-network:
     driver: bridge
-
-# volumes:
-#   postgres_data:

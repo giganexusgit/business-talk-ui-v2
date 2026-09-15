@@ -43,8 +43,16 @@ interface FeedPostProps {
   sends?: number
 }
 
-export function FeedPost({ id = Date.now().toString(), authorId = '', author, groupId, group, content, image, video, media = [], timestamp, likes, liked = false, comments, sends = 0 }: FeedPostProps) {
+const EMPTY_MEDIA: MediaItem[] = []
+
+export function FeedPost({ id: propId, authorId = '', author, groupId, group, content, image, video, media = EMPTY_MEDIA, timestamp, likes, liked = false, comments, sends = 0 }: FeedPostProps) {
   const router = useRouter()
+  const fallbackIdRef = useRef<string | null>(null)
+  if (!fallbackIdRef.current) {
+    fallbackIdRef.current = 'post_' + Math.random().toString(36).slice(2)
+  }
+  const id = propId || fallbackIdRef.current
+
   const reduxUser = useAppSelector((state: any) => state.auth.user)
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar: string }>({ id: '', name: 'You', avatar: '' })
 
@@ -113,8 +121,9 @@ export function FeedPost({ id = Date.now().toString(), authorId = '', author, gr
     setIsLiked(Boolean(liked))
   }, [liked])
 
+  const mediaKey = JSON.stringify(media)
   useEffect(() => {
-    setDisplayContent(content)
+    setDisplayContent((prev) => (prev !== content ? content : prev))
     const items: MediaItem[] = media && media.length > 0
       ? media
       : [
@@ -122,9 +131,8 @@ export function FeedPost({ id = Date.now().toString(), authorId = '', author, gr
           ...(video ? [{ url: video, type: 'video' as const }] : []),
         ]
     setDisplayMedia(items)
-    setEditContent(content)
-    setSelectedEditFiles([])
-  }, [content, id, image, video, media])
+    setEditContent((prev) => (prev !== content ? content : prev))
+  }, [content, image, video, mediaKey])
 
   useEffect(() => {
     const fetchCommentsCount = async () => {

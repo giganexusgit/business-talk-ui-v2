@@ -459,7 +459,12 @@ const MessagesClient = () => {
     prevMessageCountRef.current = count;
     if (wasNew && isNearBottomRef.current) {
       requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTo({
+            top: scrollContainerRef.current.scrollHeight,
+            behavior: 'smooth',
+          });
+        }
       });
     }
   }, [allMessages.length]);
@@ -487,7 +492,9 @@ const MessagesClient = () => {
     ) {
       didScrollInitialRef.current = activeConversationId;
       requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
       });
     }
   }, [isInitialLoading, rqData, activeConversationId]);
@@ -551,7 +558,12 @@ const MessagesClient = () => {
   );
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
   }, []);
 
   const handleHeaderAvatarClick = useCallback(() => {
@@ -639,6 +651,15 @@ const MessagesClient = () => {
     } else {
       dispatch(addPendingMessage(pendingMessage));
     }
+
+    requestAnimationFrame(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({
+          top: scrollContainerRef.current.scrollHeight,
+          behavior: 'smooth',
+        });
+      }
+    });
 
     try {
       setIsUploading(true);
@@ -774,7 +795,7 @@ const MessagesClient = () => {
     <div
       className="
       flex
-      h-screen
+      h-[calc(100dvh-4.25rem)] lg:h-[calc(100vh-0.5rem)]
       w-full
       overflow-hidden
       bg-[#F8F9FA]

@@ -99,7 +99,6 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
 
   const clientValidate = () => {
     if (!form.business_name?.trim()) return 'Business name is required'
-    if (!logoPreview) return 'Business logo is required'
     if (!form.business_established_year) return 'Year of establishment is required'
     if (!form.business_type) return 'Business type is required'
     if (!form.business_category) return 'Industry / business category is required'
@@ -198,7 +197,7 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
       {success && <div className="text-sm text-green-700 bg-green-50 rounded-xl p-3 border border-green-200">{success}</div>}
 
       <div>
-        <FieldLabel required>Business Logo</FieldLabel>
+        <FieldLabel>Business Logo <span className="text-xs text-gray-400 font-normal ml-1">(Optional)</span></FieldLabel>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 border flex items-center justify-center shrink-0">
             {logoPreview
@@ -206,11 +205,26 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
               : <Upload className="w-7 h-7 text-gray-400" />}
           </div>
           <div>
-            <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer text-sm font-medium hover:bg-gray-50" style={{ borderColor: '#E8E8E8', color: '#212529' }}>
-              <Upload className="w-4 h-4" />
-              {logoPreview ? 'Change Logo' : 'Upload Logo'}
-              <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => handleLogo(e.target.files?.[0])} />
-            </label>
+            <div className="flex items-center gap-2">
+              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer text-sm font-medium hover:bg-gray-50" style={{ borderColor: '#E8E8E8', color: '#212529' }}>
+                <Upload className="w-4 h-4" />
+                {logoPreview ? 'Change Logo' : 'Upload Logo'}
+                <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => handleLogo(e.target.files?.[0])} />
+              </label>
+              {logoPreview && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLogoFile(null)
+                    setLogoPreview(null)
+                  }}
+                  className="px-3 py-2 rounded-lg border text-sm font-medium text-gray-600 hover:bg-gray-50"
+                  style={{ borderColor: '#E8E8E8' }}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
             <p className="text-xs text-gray-400 mt-1">JPG, PNG (Max 5MB)</p>
           </div>
         </div>

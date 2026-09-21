@@ -7,9 +7,11 @@ import { ProfileAbout } from './ProfileAbout'
 import { ProfileExperience } from './ProfileExperience'
 import { ProfileEducation } from './ProfileEducation'
 import { ProfileGallery } from './ProfileGallery'
+import { ProfileCompany } from './ProfileCompany'
 import { ProfileSidebar } from './ProfileSidebar'
 import { ProfileRecentActivity } from './ProfileRecentActivity'
 import { useFollow } from '@/hooks/useFollow'
+import { shouldShowCompanyTab } from '@/lib/business-profile'
 
 export function ProfileLayout({
   profile,
@@ -31,25 +33,20 @@ export function ProfileLayout({
   loadingMoreActivity?: boolean
   hasMoreActivity?: boolean
 }) {
+  const showCompany = shouldShowCompanyTab(profile)
+
   const [activeTab, setActiveTab] = useState<
-    'about' | 'experience' | 'education' | 'gallery'
-  >(
-    isOwnProfile
-      ? 'about'
-      : 'about'
-  )
+    'about' | 'experience' | 'education' | 'gallery' | 'company'
+  >('about')
 
   useEffect(() => {
-    if (
-      !isOwnProfile &&
-      activeTab === 'gallery'
-    ) {
+    if (!isOwnProfile && activeTab === 'gallery') {
       setActiveTab('about')
     }
-  }, [
-    isOwnProfile,
-    activeTab,
-  ])
+    if (!showCompany && activeTab === 'company') {
+      setActiveTab('about')
+    }
+  }, [isOwnProfile, showCompany, activeTab])
 
   const {
     state: followState,
@@ -94,6 +91,7 @@ export function ProfileLayout({
           isOwnProfile={
             !!isOwnProfile
           }
+          showCompany={showCompany}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 px-4 pb-8">
@@ -148,6 +146,13 @@ export function ProfileLayout({
             {activeTab ===
               'gallery' && (
               <ProfileGallery />
+            )}
+
+            {activeTab ===
+              'company' && (
+              <ProfileCompany
+                profile={profile}
+              />
             )}
 
           </div>

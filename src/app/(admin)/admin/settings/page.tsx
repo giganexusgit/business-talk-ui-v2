@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 
 
@@ -869,37 +869,24 @@ export default function AdminSettingsPage() {
 
 
   const handleSaveProfile = async () => {
-
     setSaving(true); setError(''); setSuccess('')
-
     try {
-
       const form = new FormData()
-
       if (profilePhoto) form.append('profile_photo', profilePhoto)
-
       if (coverImage)   form.append('cover_image', coverImage)
-
       Object.entries(profile).forEach(([k, v]) => { if (v) form.append(k, v) })
-
-      profileSkills.forEach(s => form.append('skills', s))
-
+      form.append('skills', JSON.stringify(profileSkills))
       form.append('experience', JSON.stringify(experiences))
-
       form.append('education',  JSON.stringify(educations))
 
       await apiClient.updateProfile(form)
-
       setSuccess('Profile updated successfully!')
-
       setProfilePhoto(null); setCoverImage(null)
-
     } catch (err: any) {
-
-      setError(err?.message || 'Failed to update profile')
-
+      const raw = err?.response?.data?.message
+      const text = Array.isArray(raw) ? raw.join('. ') : (raw || err?.message || 'Failed to update profile')
+      setError(text)
     } finally { setSaving(false) }
-
   }
 
 
@@ -1036,7 +1023,7 @@ export default function AdminSettingsPage() {
                       boxShadow: profileSection === 'basic' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
                     }}
                   >
-                    Basic Information
+                    Personal Information
                   </button>
                   <button
                     type="button"
@@ -1188,7 +1175,7 @@ export default function AdminSettingsPage() {
 
                 <div className="bg-white rounded-2xl border p-6 space-y-4" style={{ border: '1px solid #E8E8E8' }}>
 
-                  <h2 className="text-xl font-semibold" style={{ color: '#212529' }}>Basic Information</h2>
+                  <h2 className="text-xl font-semibold" style={{ color: '#212529' }}>Personal Information</h2>
 
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{ color: '#212529' }}>Full Name</label>

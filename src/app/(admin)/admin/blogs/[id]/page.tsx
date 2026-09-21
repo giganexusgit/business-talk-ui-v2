@@ -430,7 +430,7 @@ export default function AdminBlogDetailsPage() {
           </div>
 
           {/* RICH CONTENT */}
-          <RichTextContent className="mb-8 text-base leading-relaxed text-gray-800" html={blog.content} />
+          <RichTextContent className="mb-8 text-base leading-relaxed text-gray-800 whitespace-pre-wrap" html={blog.content} />
         </div>
 
         {/* COMMENTS SECTION */}

@@ -8,17 +8,14 @@ export function decodeHTMLEntities(text: string): string {
   const str = String(text)
   if (!/&[a-z0-9#]+;/i.test(str)) return str
 
-  if (typeof window !== 'undefined') {
-    const doc = new DOMParser().parseFromString(str, 'text/html')
-    return doc.body.textContent || str
-  }
-
   return str
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'")
+    .replace(/&amp;/gi, '&')
+    .replace(/&nbsp;/gi, ' ')
 }
 
 export function renderHashtagsWithLinks(text: string): string {
@@ -73,7 +70,7 @@ export default function RichTextContent({
 
   return (
     <div
-      className={`rich-text-content break-words ${className}`}
+      className={`rich-text-content whitespace-pre-wrap break-words ${className}`}
       style={style}
       dangerouslySetInnerHTML={{
         __html: cleanHtml,

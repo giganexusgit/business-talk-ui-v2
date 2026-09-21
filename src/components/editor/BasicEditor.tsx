@@ -217,6 +217,7 @@ export default function BasicEditor({
             font-size: 16px;
             line-height: 1.7;
             color: #111827;
+            white-space: pre-wrap;
           }
 
           .rsw-ce:focus {

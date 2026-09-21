@@ -485,7 +485,7 @@ export default function BlogDetailsPage() {
             </button>
           </div>
         </div>
-        <RichTextContent className="mb-6" html={blog.content} />
+        <RichTextContent className="mb-6 text-base leading-relaxed whitespace-pre-wrap" html={blog.content} />
 
         {/* Hashtags displayed after content */}
         <div className="mb-8">

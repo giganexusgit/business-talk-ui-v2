@@ -71,6 +71,11 @@
   background: #94a3b8;
 }
 
+.rich-text-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .rich-text-content b,
 .rich-text-content strong {
   font-weight: 700;

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useProfile } from '@/hooks/useProfile'
 import { ProfileLayout } from '@/app/(user)/profile/components/ProfileLayout'
+import { publicProfileFromUser } from '@/lib/business-profile'
 
 export default function MyProfilePage() {
   const { profile, stats, activity, loading } = useProfile()
@@ -20,19 +21,7 @@ export default function MyProfilePage() {
   if (loading) return <div>Loading...</div>
   if (!profile) return <div>No profile</div>
 
-  const normalized = {
-    name: profile.full_name,
-    cover_image: profile.cover_image,
-    avatar: profile.profile_photo,
-    title: profile.profession,
-    location: profile.location,
-    company: profile.company,
-    email: profile.email,
-    phone_number: profile.phone_number,
-    about: profile.about || profile.short_bio,
-    experience: profile.experience,
-    education: profile.education,
-  }
+  const normalized = publicProfileFromUser(profile)
 
   return (
     <ProfileLayout

@@ -24,6 +24,8 @@ import {
   syncPermissionState,
 } from '@/redux/slices/pushSlice'
 import { isPushSupported, getPushPermissionState } from '@/lib/fcm'
+import BusinessInformationForm from '@/components/settings/BusinessInformationForm'
+import { ACCOUNT_TYPE, BusinessProfileFields } from '@/lib/business-profile'
 
 
 type ExperienceEntry = {
@@ -686,6 +688,10 @@ export default function AdminSettingsPage() {
 
   const [coverPreview, setCoverPreview] = useState<string | null>(null)
 
+  const [profileSection, setProfileSection] = useState<'basic' | 'business'>('basic')
+  const [accountType, setAccountType] = useState<string>(ACCOUNT_TYPE.PROFESSIONAL)
+  const [businessInitial, setBusinessInitial] = useState<BusinessProfileFields>({})
+
 
 
   const [experiences, setExperiences] = useState<ExperienceEntry[]>([])
@@ -809,6 +815,24 @@ export default function AdminSettingsPage() {
       if (d.profile_photo) setPhotoPreview(d.profile_photo)
 
       if (d.cover_image)   setCoverPreview(d.cover_image)
+
+      setAccountType(d.account_type || ACCOUNT_TYPE.PROFESSIONAL)
+      setBusinessInitial({
+        account_type: d.account_type || ACCOUNT_TYPE.PROFESSIONAL,
+        business_logo: d.business_logo || '',
+        business_name: d.business_name || '',
+        business_established_year: d.business_established_year || '',
+        business_type: d.business_type || '',
+        business_category: d.business_category || '',
+        business_address: d.business_address || '',
+        business_city: d.business_city || '',
+        business_phone: d.business_phone || '',
+        business_website: d.business_website || '',
+        business_about: d.business_about || '',
+        business_products_services: d.business_products_services || '',
+        business_gallery: d.business_gallery || [],
+      })
+      if (d.account_type === ACCOUNT_TYPE.BUSINESS) setProfileSection('business')
 
     }).catch(() => setError('Failed to load profile'))
 
@@ -1001,7 +1025,62 @@ export default function AdminSettingsPage() {
 
                 {success && <div className="text-sm text-green-700 bg-green-50 rounded-xl p-4 border border-green-200">{success}</div>}
 
+                <div className="bg-[#F1F3F4] rounded-full p-1 flex w-full max-w-md">
+                  <button
+                    type="button"
+                    onClick={() => setProfileSection('basic')}
+                    className="flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all"
+                    style={{
+                      backgroundColor: profileSection === 'basic' ? '#FFFFFF' : 'transparent',
+                      color: profileSection === 'basic' ? '#212529' : '#5F6368',
+                      boxShadow: profileSection === 'basic' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                    }}
+                  >
+                    Basic Information
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProfileSection('business')}
+                    className="flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all"
+                    style={{
+                      backgroundColor: profileSection === 'business' ? '#212529' : 'transparent',
+                      color: profileSection === 'business' ? '#FFFFFF' : '#5F6368',
+                    }}
+                  >
+                    Business Information
+                  </button>
+                </div>
 
+                {accountType === ACCOUNT_TYPE.BUSINESS && profileSection === 'basic' && (
+                  <p className="text-xs text-gray-500">This account is currently shown as a business profile. Open Business Information to update it or switch back.</p>
+                )}
+
+                {profileSection === 'business' ? (
+                  <BusinessInformationForm
+                    initial={businessInitial}
+                    onSaved={(user) => {
+                      const nextType = user?.account_type || ACCOUNT_TYPE.BUSINESS
+                      setAccountType(nextType)
+                      setBusinessInitial({
+                        account_type: nextType,
+                        business_logo: user?.business_logo || businessInitial.business_logo || '',
+                        business_name: user?.business_name || '',
+                        business_established_year: user?.business_established_year || '',
+                        business_type: user?.business_type || '',
+                        business_category: user?.business_category || '',
+                        business_address: user?.business_address || '',
+                        business_city: user?.business_city || '',
+                        business_phone: user?.business_phone || '',
+                        business_website: user?.business_website || '',
+                        business_about: user?.business_about || '',
+                        business_products_services: user?.business_products_services || '',
+                        business_gallery: user?.business_gallery || [],
+                      })
+                      if (nextType === ACCOUNT_TYPE.PROFESSIONAL) setProfileSection('basic')
+                    }}
+                  />
+                ) : (
+                <>
 
                 {/* Cover image */}
 
@@ -1355,6 +1434,8 @@ export default function AdminSettingsPage() {
                   {saving ? 'Saving...' : 'Save All Changes'}
 
                 </button>
+                </>
+                )}
 
               </div>
 

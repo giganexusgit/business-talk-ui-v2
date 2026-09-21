@@ -14,6 +14,11 @@ import { useUsers } from '@/hooks/useUsers'
 import { useFollow } from '@/hooks/useFollow'
 import { useAppSelector } from '@/hooks/useRedux'
 import { profileHref } from '@/lib/profile-link'
+import {
+  displayAvatarFromUser,
+  displayNameFromUser,
+  displayTitleFromUser,
+} from '@/lib/business-profile'
 
 const categories = [
   'All',
@@ -101,9 +106,13 @@ function PeopleCard({
     followState === 'pending' ? (isHovered ? 'Cancel Request' : 'Requested') :
     'Connect'
 
+  const displayName = displayNameFromUser(user)
+  const displayAvatar = displayAvatarFromUser(user)
+  const displayTitle = displayTitleFromUser(user) || 'Professional'
+
   return (
     <Link
-      href={profileHref(user.id, user.full_name)}
+      href={profileHref(user.id, displayName)}
       className="block group"
     >
       <div className="bg-white rounded-2xl border p-6 transition hover:shadow-md hover:scale-[1.02]">
@@ -111,17 +120,17 @@ function PeopleCard({
         {/* Avatar */}
         <div className="flex flex-col items-center text-center mb-4">
           <img
-            src={user.profile_photo || `https://ui-avatars.com/api/name=${encodeURIComponent(user.full_name || 'User')}`}
-            alt={user.full_name || 'User Avatar'}
+            src={displayAvatar || `https://ui-avatars.com/api/name=${encodeURIComponent(displayName || 'User')}`}
+            alt={displayName || 'User Avatar'}
             className="w-20 h-20 rounded-full object-cover mb-3 border"
           />
 
           <h3 className="font-semibold text-lg">
-            {user.full_name}
+            {displayName}
           </h3>
 
           <p className="text-sm text-gray-500">
-            {user.profession || 'Professional'}
+            {displayTitle}
           </p>
 
           {Number(user.mutual_count || 0) > 0 && (

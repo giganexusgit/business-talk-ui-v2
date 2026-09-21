@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { profileHref } from '@/lib/profile-link'
+import { displayAvatarFromUser, displayNameFromUser, displayTitleFromUser } from '@/lib/business-profile'
 import { Mail, Phone, Users, Newspaper, MessageSquare, TrendingUp, X, Loader2 } from 'lucide-react'
 import apiClient from '@/lib/api-client'
 
@@ -14,6 +15,11 @@ interface UserItem {
   full_name?: string
   profile_photo?: string
   profession?: string
+  account_type?: string
+  business_name?: string
+  business_logo?: string
+  business_type?: string
+  business_category?: string
 }
 
 function normaliseList(data: any): UserItem[] {
@@ -27,6 +33,11 @@ function normaliseList(data: any): UserItem[] {
       full_name: u.full_name,
       profile_photo: u.profile_photo,
       profession: u.profession,
+      account_type: u.account_type,
+      business_name: u.business_name,
+      business_logo: u.business_logo,
+      business_type: u.business_type,
+      business_category: u.business_category,
     }
   }).filter((u: UserItem) => u.id)
 }
@@ -226,23 +237,23 @@ export function ProfileSidebar({
                 {listUsers.map(u => (
                   <Link
                       key={u.id}
-                      href={profileHref(u.id, u.full_name || u.username)}
+                      href={profileHref(u.id, displayNameFromUser(u) || u.username)}
                       className="flex items-center gap-3 px-5 py-3 transition-colors"
                       style={{ color: 'inherit' }}
                       onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#F8F9FA')}
                       onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
                     <img
-                      src={u.profile_photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.username)}&background=E8E8E8&color=212529&size=40`}
-                      alt={u.username}
+                      src={displayAvatarFromUser(u) || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayNameFromUser(u) || u.username)}&background=E8E8E8&color=212529&size=40`}
+                      alt={displayNameFromUser(u) || u.username}
                       className="w-9 h-9 rounded-full object-cover shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate" style={{ color: '#212529' }}>
-                        {u.full_name || u.username}
+                        {displayNameFromUser(u) || u.username}
                       </p>
-                      {u.profession && (
-                        <p className="text-xs truncate" style={{ color: '#5F6368' }}>{u.profession}</p>
+                      {displayTitleFromUser(u) && (
+                        <p className="text-xs truncate" style={{ color: '#5F6368' }}>{displayTitleFromUser(u)}</p>
                       )}
                     </div>
                   </Link>

@@ -146,7 +146,14 @@ export function ProfileHeader({
           </button>
 
           <div className="flex-1 min-w-0 mt-10 sm:mt-12 md:mt-16">
-            <h1 className="text-xl sm:text-2xl font-semibold truncate">{profileData.name}</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold truncate inline-flex items-center gap-2">
+              {profileData.name}
+              {profileData.isBusiness && (
+                <span className="shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full bg-gray-900 text-white">
+                  Business
+                </span>
+              )}
+            </h1>
             <p className="text-gray-500 text-sm sm:text-base truncate">{profileData.title}</p>
 
             <div className="flex flex-wrap gap-3 text-xs sm:text-sm text-gray-400 mt-2">

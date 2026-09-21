@@ -16,6 +16,9 @@ export interface User {
   role_id: string
   is_banned?: boolean
   is_shadow_banned?: boolean
+  account_type?: 'professional' | 'business'
+  business_name?: string
+  business_logo?: string
   created_at: string
   updated_at: string
 }

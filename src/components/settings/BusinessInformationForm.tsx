@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Upload, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import apiClient from '@/lib/api-client'
 import {
@@ -16,6 +16,8 @@ import {
 
 type Props = {
   initial: BusinessProfileFields
+  profilePhoto?: File | null
+  coverImage?: File | null
   onSaved?: (user: any) => void
 }
 
@@ -47,10 +49,8 @@ function FieldLabel({ children, required }: { children: React.ReactNode; require
   )
 }
 
-export default function BusinessInformationForm({ initial, onSaved }: Props) {
+export default function BusinessInformationForm({ initial, profilePhoto, coverImage, onSaved }: Props) {
   const [form, setForm] = useState<BusinessProfileFields>({ ...EMPTY, ...initial })
-  const [logoFile, setLogoFile] = useState<File | null>(null)
-  const [logoPreview, setLogoPreview] = useState<string | null>(initial.business_logo || null)
   const [galleryUrls, setGalleryUrls] = useState<string[]>(parseGalleryList(initial.business_gallery))
   const [galleryFiles, setGalleryFiles] = useState<{ file: File; preview: string }[]>([])
   const [saving, setSaving] = useState(false)
@@ -60,8 +60,6 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
 
   useEffect(() => {
     setForm({ ...EMPTY, ...initial })
-    setLogoPreview(initial.business_logo || null)
-    setLogoFile(null)
     setGalleryUrls(parseGalleryList(initial.business_gallery))
     setGalleryFiles([])
   }, [initial])
@@ -71,17 +69,6 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
 
   const setField = (key: keyof BusinessProfileFields, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }))
-  }
-
-  const handleLogo = (file?: File) => {
-    if (!file) return
-    const err = validateBusinessImageFile(file)
-    if (err) { setError(err); return }
-    setError('')
-    setLogoFile(file)
-    const reader = new FileReader()
-    reader.onload = (ev) => setLogoPreview(ev.target?.result as string)
-    reader.readAsDataURL(file)
   }
 
   const handleGalleryAdd = (files: FileList | null) => {
@@ -134,13 +121,13 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
       data.append('business_about', form.business_about!.trim())
       data.append('business_products_services', form.business_products_services!.trim())
       data.append('business_gallery', JSON.stringify(galleryUrls))
-      if (logoFile) data.append('business_logo', logoFile)
+      if (profilePhoto) data.append('profile_photo', profilePhoto)
+      if (coverImage) data.append('cover_image', coverImage)
       galleryFiles.forEach((item) => data.append('gallery_images', item.file))
 
       const res = await apiClient.updateProfile(data)
       const user = res.data?.user || res.data
       setSuccess('Business profile saved. Your account is now a business account.')
-      setLogoFile(null)
       setGalleryFiles([])
       onSaved?.(user)
     } catch (err: any) {
@@ -154,8 +141,6 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
 
   const handleCancel = () => {
     setForm({ ...EMPTY, ...initial })
-    setLogoPreview(initial.business_logo || null)
-    setLogoFile(null)
     setGalleryUrls(parseGalleryList(initial.business_gallery))
     setGalleryFiles([])
     setError('')
@@ -195,40 +180,6 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
 
       {error && <div className="text-sm text-red-600 bg-red-50 rounded-xl p-3 border border-red-200">{error}</div>}
       {success && <div className="text-sm text-green-700 bg-green-50 rounded-xl p-3 border border-green-200">{success}</div>}
-
-      <div>
-        <FieldLabel>Business Logo <span className="text-xs text-gray-400 font-normal ml-1">(Optional)</span></FieldLabel>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 border flex items-center justify-center shrink-0">
-            {logoPreview
-              ? <img src={logoPreview} alt="Business logo" className="w-full h-full object-cover" />
-              : <Upload className="w-7 h-7 text-gray-400" />}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer text-sm font-medium hover:bg-gray-50" style={{ borderColor: '#E8E8E8', color: '#212529' }}>
-                <Upload className="w-4 h-4" />
-                {logoPreview ? 'Change Logo' : 'Upload Logo'}
-                <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => handleLogo(e.target.files?.[0])} />
-              </label>
-              {logoPreview && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLogoFile(null)
-                    setLogoPreview(null)
-                  }}
-                  className="px-3 py-2 rounded-lg border text-sm font-medium text-gray-600 hover:bg-gray-50"
-                  style={{ borderColor: '#E8E8E8' }}
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-            <p className="text-xs text-gray-400 mt-1">JPG, PNG (Max 5MB)</p>
-          </div>
-        </div>
-      </div>
 
       <div>
         <FieldLabel required>Business Name</FieldLabel>

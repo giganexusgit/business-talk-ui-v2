@@ -1047,70 +1047,13 @@ export default function SettingsPage() {
 
                 {success && <div className="text-sm text-green-700 bg-green-50 rounded-xl p-4 border border-green-200">{success}</div>}
 
-                <div className="bg-[#F1F3F4] rounded-full p-1 flex w-full max-w-md">
-                  <button
-                    type="button"
-                    onClick={() => setProfileSection('basic')}
-                    className="flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all"
-                    style={{
-                      backgroundColor: profileSection === 'basic' ? '#FFFFFF' : 'transparent',
-                      color: profileSection === 'basic' ? '#212529' : '#5F6368',
-                      boxShadow: profileSection === 'basic' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
-                    }}
-                  >
-                    Personal Information
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setProfileSection('business')}
-                    className="flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all"
-                    style={{
-                      backgroundColor: profileSection === 'business' ? '#212529' : 'transparent',
-                      color: profileSection === 'business' ? '#FFFFFF' : '#5F6368',
-                    }}
-                  >
-                    Business Information
-                  </button>
-                </div>
-
-                {accountType === ACCOUNT_TYPE.BUSINESS && profileSection === 'basic' && (
-                  <p className="text-xs text-gray-500">This account is currently shown as a business profile. Open Business Information to update it or switch back.</p>
-                )}
-
-                {profileSection === 'business' ? (
-                  <BusinessInformationForm
-                    initial={businessInitial}
-                    onSaved={(user) => {
-                      const nextType = user?.account_type || ACCOUNT_TYPE.BUSINESS
-                      setAccountType(nextType)
-                      setBusinessInitial({
-                        account_type: nextType,
-                        business_logo: user?.business_logo || businessInitial.business_logo || '',
-                        business_name: user?.business_name || '',
-                        business_established_year: user?.business_established_year || '',
-                        business_type: user?.business_type || '',
-                        business_category: user?.business_category || '',
-                        business_address: user?.business_address || '',
-                        business_city: user?.business_city || '',
-                        business_phone: user?.business_phone || '',
-                        business_website: user?.business_website || '',
-                        business_about: user?.business_about || '',
-                        business_products_services: user?.business_products_services || '',
-                        business_gallery: user?.business_gallery || [],
-                      })
-                      if (nextType === ACCOUNT_TYPE.PROFESSIONAL) setProfileSection('basic')
-                    }}
-                  />
-                ) : (
-                <>
-
                 {/* Cover image */}
 
                 <div className="bg-white rounded-2xl border p-6" style={{ border: '1px solid #E8E8E8' }}>
 
                   <h2 className="text-xl font-semibold mb-1" style={{ color: '#212529' }}>Cover Image</h2>
 
-                  <p className="text-xs text-gray-400 mb-3">Recommended: 1584Ã—396px (16:5 ratio)</p>
+                  <p className="text-xs text-gray-400 mb-3">Recommended: 1584×396px (16:5 ratio)</p>
 
                   <label className="block cursor-pointer">
 
@@ -1203,6 +1146,66 @@ export default function SettingsPage() {
                   </div>
 
                 </div>
+
+                <div className="bg-[#F1F3F4] rounded-full p-1 flex w-full max-w-md">
+                  <button
+                    type="button"
+                    onClick={() => setProfileSection('basic')}
+                    className="flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all"
+                    style={{
+                      backgroundColor: profileSection === 'basic' ? '#FFFFFF' : 'transparent',
+                      color: profileSection === 'basic' ? '#212529' : '#5F6368',
+                      boxShadow: profileSection === 'basic' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                    }}
+                  >
+                    Personal Information
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProfileSection('business')}
+                    className="flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all"
+                    style={{
+                      backgroundColor: profileSection === 'business' ? '#212529' : 'transparent',
+                      color: profileSection === 'business' ? '#FFFFFF' : '#5F6368',
+                    }}
+                  >
+                    Business Information
+                  </button>
+                </div>
+
+                {accountType === ACCOUNT_TYPE.BUSINESS && profileSection === 'basic' && (
+                  <p className="text-xs text-gray-500">This account is currently shown as a business profile. Open Business Information to update it or switch back.</p>
+                )}
+
+                {profileSection === 'business' ? (
+                  <BusinessInformationForm
+                    initial={businessInitial}
+                    profilePhoto={profilePhoto}
+                    coverImage={coverImage}
+                    onSaved={(user) => {
+                      const nextType = user?.account_type || ACCOUNT_TYPE.BUSINESS
+                      setAccountType(nextType)
+                      setProfilePhoto(null)
+                      setCoverImage(null)
+                      setBusinessInitial({
+                        account_type: nextType,
+                        business_name: user?.business_name || '',
+                        business_established_year: user?.business_established_year || '',
+                        business_type: user?.business_type || '',
+                        business_category: user?.business_category || '',
+                        business_address: user?.business_address || '',
+                        business_city: user?.business_city || '',
+                        business_phone: user?.business_phone || '',
+                        business_website: user?.business_website || '',
+                        business_about: user?.business_about || '',
+                        business_products_services: user?.business_products_services || '',
+                        business_gallery: user?.business_gallery || [],
+                      })
+                      if (nextType === ACCOUNT_TYPE.PROFESSIONAL) setProfileSection('basic')
+                    }}
+                  />
+                ) : (
+                <>
 
 
 

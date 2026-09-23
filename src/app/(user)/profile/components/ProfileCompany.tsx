@@ -8,7 +8,7 @@ import {
   Phone,
   Calendar,
   Layers,
-  Sparkles,
+  Package,
   ExternalLink,
   X,
   Tag,
@@ -19,7 +19,7 @@ export function ProfileCompany({ profile }: { profile: any }) {
   const [activeImage, setActiveImage] = useState<string | null>(null)
 
   const companyName = profile?.business_name || profile?.company || 'Company'
-  const companyLogo = profile?.business_logo
+  const companyLogo = profile?.profile_photo || profile?.avatar || profile?.business_logo
   const businessType = profile?.business_type
   const businessCategory = profile?.business_category
   const establishedYear = profile?.business_established_year
@@ -123,7 +123,7 @@ export function ProfileCompany({ profile }: { profile: any }) {
       {productsServices && (
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-500" />
+            <Package className="w-5 h-5 text-gray-700" />
             Products & Services
           </h3>
           <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">

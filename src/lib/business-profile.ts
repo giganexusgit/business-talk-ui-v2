@@ -114,8 +114,7 @@ export function displayNameFromUser(user: any) {
 }
 
 export function displayAvatarFromUser(user: any) {
-  if (isBusinessAccount(user) && user?.business_logo) return user.business_logo
-  return user?.profile_photo || user?.avatar || ''
+  return user?.profile_photo || user?.avatar || user?.business_logo || ''
 }
 
 export function displayTitleFromUser(user: any) {

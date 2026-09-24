@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, X, FileText, Download, FileArchive, FileSpreadsheet, File } from 'lucide-react';
+import { Clock, Check, CheckCheck, X, FileText, Download, FileArchive, FileSpreadsheet, File } from 'lucide-react';
 import type { MessageEntity } from '@/types/chat';
 import RichTextContent from '@/components/common/RichTextContent';
 import { renderMessageHtml } from '@/lib/chat/renderMessage';
@@ -245,25 +245,30 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             <div className="flex items-center justify-end gap-1 mt-1">
               <span className="text-[10px] text-gray-500">{displayTime}</span>
               {isMine && (
-                <span className="flex items-center gap-1">
-                  {message.status === 'failed' ? (
-                    <span className="flex items-center gap-1">
-                      <X className="w-3 h-3 text-red-500" aria-hidden />
+                <span className="flex items-center">
+                  {message.status === 'pending' ? (
+                    <span className="flex items-center" title="Sending...">
+                      <Clock className="w-3 h-3 text-gray-500 shrink-0" aria-hidden />
+                      <span className="sr-only">Sending</span>
+                    </span>
+                  ) : message.status === 'failed' ? (
+                    <span className="flex items-center" title="Failed to send">
+                      <X className="w-3 h-3 text-red-500 shrink-0" aria-hidden />
                       <span className="sr-only">Failed</span>
                     </span>
                   ) : message.status === 'seen' ? (
-                    <span className="flex items-center gap-[2px]">
-                      <span className="flex items-center">
-                        <Check className="w-3 h-3 text-green-600" aria-hidden />
-                      </span>
-                      <span className="flex items-center">
-                        <Check className="w-3 h-3 text-green-600" aria-hidden />
-                      </span>
+                    <span className="flex items-center" title="Seen">
+                      <CheckCheck className="w-3.5 h-3.5 text-green-600 shrink-0" aria-hidden />
                       <span className="sr-only">Seen</span>
                     </span>
+                  ) : message.status === 'delivered' ? (
+                    <span className="flex items-center" title="Delivered">
+                      <CheckCheck className="w-3.5 h-3.5 text-gray-500 shrink-0" aria-hidden />
+                      <span className="sr-only">Delivered</span>
+                    </span>
                   ) : (
-                    <span className="flex items-center gap-1">
-                      <Check className="w-3 h-3 text-gray-500" aria-hidden />
+                    <span className="flex items-center" title="Sent">
+                      <Check className="w-3 h-3 text-gray-500 shrink-0" aria-hidden />
                       <span className="sr-only">Sent</span>
                     </span>
                   )}

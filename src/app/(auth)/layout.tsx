@@ -1,4 +1,49 @@
+'use client'
+
+import { usePathname } from 'next/navigation'
+import Link from 'next/link'
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const isCompleteProfile = pathname?.includes('complete-profile')
+
+  if (isCompleteProfile) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA] text-[#0F1419] flex flex-col justify-between">
+        {/* Top Minimalist Header */}
+        <header className="border-b border-gray-200 bg-white/95 backdrop-blur-sm sticky top-0 z-30 shadow-xs">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2.5 hover:opacity-85 transition">
+              <img
+                src="/assets/logos/BUSINESSTALK24_LOGO_png.png"
+                alt="BusinessTalk24"
+                className="h-8 w-auto object-contain"
+              />
+            </Link>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-black text-white">
+                Step 2 of 2
+              </span>
+              <span className="text-xs font-medium text-gray-500 hidden sm:inline">
+                Profile Setup
+              </span>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 sm:py-10">
+          {children}
+        </main>
+
+        {/* Clean Footer */}
+        <footer className="border-t border-gray-200 py-4 bg-white text-center text-xs text-gray-500">
+          <p>© {new Date().getFullYear()} BusinessTalk24. All rights reserved.</p>
+        </footer>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row" style={{ background: 'linear-gradient(135deg, #f8f9fa 0%, #e8ecf0 100%)' }}>
       {/* Left Side - Branding */}

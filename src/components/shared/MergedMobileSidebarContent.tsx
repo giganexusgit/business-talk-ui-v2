@@ -1,11 +1,14 @@
 'use client'
 
 import React from 'react'
+import { useSelector } from 'react-redux'
 import { userSidebarSections } from '@/components/shared/UserSidebar'
 import { TrendingItem, UserCard, GroupCard } from '@/components/user/RightSidebar'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useRedux'
 import { logout } from '@/redux/slices/authSlice'
+import { selectTotalUnreadCount } from '@/redux/selectors/chatSelectors'
+import { selectNotificationUnreadCount } from '@/redux/selectors/notificationSelectors'
 import { FileCheck, Info, LogOut, MessageSquare, Shield, Users } from 'lucide-react'
 import Link from 'next/link'
 
@@ -35,6 +38,9 @@ export const MergedMobileSidebarContent = ({
   const pathname = usePathname()
   const { dispatch } = useAuth()
   const router = useRouter()
+
+  const unreadMessages = useSelector(selectTotalUnreadCount)
+  const unreadNotifications = useSelector(selectNotificationUnreadCount)
 
   const resolveEntityId = (item: any) => {
     return (
@@ -122,8 +128,12 @@ export const MergedMobileSidebarContent = ({
                 const Icon = item.icon
                 const isActive = pathname === item.href
 
+                let count = 0
+                if (item.href === '/messages') count = unreadMessages
+                if (item.href === '/notifications') count = unreadNotifications
+
                 return (
-                  <a
+                  <Link
                     key={item.href}
                     href={item.href}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-lg"
@@ -132,9 +142,16 @@ export const MergedMobileSidebarContent = ({
                       color: '#212529',
                     }}
                   >
-                    <Icon className="w-5 h-5" />
+                    <div className="relative flex items-center justify-center">
+                      <Icon className="w-5 h-5" />
+                      {count > 0 && (
+                        <span className="absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 text-[10px] font-bold bg-red-600 text-white rounded-full flex items-center justify-center leading-none shadow-xs">
+                          {count > 99 ? '99+' : count}
+                        </span>
+                      )}
+                    </div>
                     <span className="font-medium">{item.label}</span>
-                  </a>
+                  </Link>
                 )
               })}
             </div>

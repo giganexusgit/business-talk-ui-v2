@@ -17,9 +17,14 @@ import {
   Info,
   FileEdit,
 } from 'lucide-react'
+import { useEffect } from 'react'
+import { useSelector } from 'react-redux'
 import { useAuth } from '@/hooks/useRedux'
 import { logout } from '@/redux/slices/authSlice'
-
+import { selectTotalUnreadCount } from '@/redux/selectors/chatSelectors'
+import { selectNotificationUnreadCount } from '@/redux/selectors/notificationSelectors'
+import { fetchUnreadCount } from '@/redux/slices/notificationsSlice'
+import { fetchConversations } from '@/redux/slices/chatSlice'
 
 // Data-driven sidebar sections for reuse
 export const userSidebarSections = [
@@ -37,7 +42,6 @@ export const userSidebarSections = [
       { label: 'People', href: '/people', icon: Users },
       { label: 'Groups', href: '/groups', icon: UsersRound },
       { label: 'Blogs', href: '/blogs', icon: BookOpen },
-      // { label: 'Drafts', href: '/drafts', icon: FileEdit },
     ],
   },
   {
@@ -50,11 +54,20 @@ export const userSidebarSections = [
   },
 ]
 
-
 export const UserSidebar = () => {
   const pathname = usePathname()
-  const { dispatch } = useAuth()
+  const { dispatch, isAuthenticated } = useAuth()
   const router = useRouter()
+
+  const unreadMessages = useSelector(selectTotalUnreadCount)
+  const unreadNotifications = useSelector(selectNotificationUnreadCount)
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchUnreadCount())
+      dispatch(fetchConversations())
+    }
+  }, [dispatch, isAuthenticated])
 
   const handleLogout = async () => {
     await dispatch(logout())   // wait for logout to complete
@@ -89,11 +102,16 @@ export const UserSidebar = () => {
               {section.items.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
+                
+                let count = 0
+                if (item.href === '/messages') count = unreadMessages
+                if (item.href === '/notifications') count = unreadNotifications
+
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all group"
                     style={{
                       backgroundColor: isActive ? '#F8F9FA' : 'transparent',
                       color: '#212529',
@@ -109,7 +127,14 @@ export const UserSidebar = () => {
                       }
                     }}
                   >
-                    <Icon className="w-5 h-5" />
+                    <div className="relative flex items-center justify-center">
+                      <Icon className="w-5 h-5" />
+                      {count > 0 && (
+                        <span className="absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 text-[10px] font-bold bg-red-600 text-white rounded-full flex items-center justify-center leading-none shadow-xs">
+                          {count > 99 ? '99+' : count}
+                        </span>
+                      )}
+                    </div>
                     <span className="font-medium">{item.label}</span>
                   </Link>
                 )

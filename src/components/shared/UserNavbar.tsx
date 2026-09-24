@@ -341,10 +341,12 @@ export const UserNavbar = ({ onMenuClick, children }: UserNavbarProps) => {
             
             {/* Notification */}
             <Link href="/notifications">
-              <button className="relative p-2 hover:bg-gray-100 rounded-lg">
-                <Bell className="h-6 w-6 text-gray-600" />
+              <button aria-label="Notifications" className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <Bell className="h-6 w-6 text-gray-700" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none shadow-xs">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
                 )}
               </button>
             </Link>

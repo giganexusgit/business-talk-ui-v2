@@ -789,20 +789,15 @@ export default function CompleteProfilePage() {
 
   return (
     <div className="w-full">
-      {/* Title & Introduction */}
-      <div className="text-center mb-6">
+      {/* Title & Account Selection Prompt */}
+      <div className="text-center mb-5">
         <h1 className="text-2xl sm:text-3xl font-black text-black tracking-tight mb-1.5">
-          Complete Your Profile
+          Select which account you want to create?
         </h1>
-        <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto">
-          {accountType === 'professional'
-            ? 'Set up your personal professional identity and experience.'
-            : 'Set up your company profile, business details, and showcase.'}
-        </p>
       </div>
 
       {/* ── Slim & Professional Segmented Switch ────────────────────────────── */}
-      <div className="flex justify-center mb-7">
+      <div className="flex justify-center mb-6">
         <div className="inline-flex p-1 bg-gray-100/90 border border-gray-200 rounded-full max-w-md w-full shadow-2xs">
           <button
             type="button"
@@ -836,6 +831,18 @@ export default function CompleteProfilePage() {
             <span>Business Account</span>
           </button>
         </div>
+      </div>
+
+      {/* ── Dynamic Profile Heading ───────────────────────────────────────── */}
+      <div className="text-center mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight mb-1.5">
+          Complete Your {accountType === 'professional' ? 'Personal' : 'Business'} Profile
+        </h2>
+        <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto">
+          {accountType === 'professional'
+            ? 'Set up your personal professional identity and experience.'
+            : 'Set up your company profile, business details, and showcase.'}
+        </p>
       </div>
 
       {/* ── Main Form Container ───────────────────────────────────────────── */}

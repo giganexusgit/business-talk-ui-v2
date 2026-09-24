@@ -860,7 +860,7 @@ export default function CompleteProfilePage() {
             {/* Cover / Banner */}
             <div>
               <FormLabel hint="Recommended: 16:9 ratio (e.g. 1584×396px)">
-                {accountType === 'professional' ? 'Profile Banner / Cover Image' : 'Company Banner / Header'}
+                {accountType === 'professional' ? 'Profile Banner / Cover Image (Optional)' : 'Company Banner / Header (Optional)'}
               </FormLabel>
               <label className="block cursor-pointer group">
                 <div
@@ -872,7 +872,7 @@ export default function CompleteProfilePage() {
                   ) : (
                     <div className="flex flex-col items-center gap-1.5 text-gray-600 group-hover:text-black transition">
                       <Upload className="w-6 h-6" />
-                      <span className="text-xs font-semibold">Click to upload banner image</span>
+                      <span className="text-xs font-semibold">Click to upload banner image (optional)</span>
                     </div>
                   )}
                 </div>
@@ -913,11 +913,11 @@ export default function CompleteProfilePage() {
               </div>
               <div className="flex-1">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-800 mb-1.5">
-                  {accountType === 'professional' ? 'Profile Photo' : 'Business Logo'}
+                  {accountType === 'professional' ? 'Profile Photo (Optional)' : 'Business Logo (Optional)'}
                 </label>
                 <label className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-xl text-xs font-semibold text-gray-800 hover:bg-black hover:text-white hover:border-black cursor-pointer transition-all shadow-xs">
                   <Upload className="w-3.5 h-3.5" />
-                  <span>{previewPhoto ? 'Change Photo' : 'Upload Image'}</span>
+                  <span>{previewPhoto ? 'Change Photo' : 'Upload Image (Optional)'}</span>
                   <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
                 </label>
                 {previewPhoto && (

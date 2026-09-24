@@ -108,14 +108,14 @@ export function ProfileCompany({ profile }: { profile: any }) {
         </div>
       </div>
 
-      {/* About Company */}
+      {/* About Business */}
       {about && (
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <Building2 className="w-5 h-5 text-gray-700" />
-            About Company
+            About Business
           </h3>
-          <BioText content={about} fallback="No company description provided." />
+          <BioText content={about} fallback="No business description provided." />
         </div>
       )}
 
@@ -132,11 +132,11 @@ export function ProfileCompany({ profile }: { profile: any }) {
         </div>
       )}
 
-      {/* Company Gallery */}
+      {/* Business Gallery */}
       {gallery.length > 0 && (
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
-            <span>Company Gallery</span>
+            <span>Business Gallery</span>
             <span className="text-xs font-normal text-gray-400">{gallery.length} photos</span>
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

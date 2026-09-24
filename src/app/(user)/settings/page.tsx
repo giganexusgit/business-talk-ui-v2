@@ -26,7 +26,7 @@ import {
 import { isPushSupported, getPushPermissionState } from '@/lib/fcm'
 import PushDevicesPanel from '@/components/user/PushDevicesPanel'
 import PasswordInput from '@/components/common/PasswordInput'
-import { logout } from '@/redux/slices/authSlice'
+import { logout, setUser } from '@/redux/slices/authSlice'
 import BusinessInformationForm from '@/components/settings/BusinessInformationForm'
 import { ACCOUNT_TYPE, BusinessProfileFields } from '@/lib/business-profile'
 
@@ -692,9 +692,13 @@ export default function SettingsPage() {
 
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
 
+  const [photoRemoved, setPhotoRemoved] = useState(false)
+
   const [coverImage, setCoverImage] = useState<File | null>(null)
 
   const [coverPreview, setCoverPreview] = useState<string | null>(null)
+
+  const [coverRemoved, setCoverRemoved] = useState(false)
 
   const [profileSection, setProfileSection] = useState<'basic' | 'business'>('basic')
   const [accountType, setAccountType] = useState<string>(ACCOUNT_TYPE.PROFESSIONAL)
@@ -834,6 +838,7 @@ export default function SettingsPage() {
     const err = validateImageFile(file); if (err) { alert(err); return }
 
     setProfilePhoto(file)
+    setPhotoRemoved(false)
 
     const r = new FileReader(); r.onload = ev => setPhotoPreview(ev.target?.result as string); r.readAsDataURL(file)
 
@@ -846,27 +851,52 @@ export default function SettingsPage() {
     const err = validateImageFile(file); if (err) { alert(err); return }
 
     setCoverImage(file)
+    setCoverRemoved(false)
 
     const r = new FileReader(); r.onload = ev => setCoverPreview(ev.target?.result as string); r.readAsDataURL(file)
 
   }
 
+  const handleRemoveCover = () => {
+    setCoverImage(null)
+    setCoverPreview(null)
+    setCoverRemoved(true)
+  }
 
+  const handleRemovePhoto = () => {
+    setProfilePhoto(null)
+    setPhotoPreview(null)
+    setPhotoRemoved(true)
+  }
 
   const handleSaveProfile = async () => {
     setSaving(true); setError(''); setSuccess('')
     try {
       const form = new FormData()
-      if (profilePhoto) form.append('profile_photo', profilePhoto)
-      if (coverImage)   form.append('cover_image', coverImage)
-      Object.entries(profile).forEach(([k, v]) => { if (v) form.append(k, v) })
+      if (profilePhoto) {
+        form.append('profile_photo', profilePhoto)
+      } else if (photoRemoved) {
+        form.append('profile_photo', '')
+      }
+
+      if (coverImage) {
+        form.append('cover_image', coverImage)
+      } else if (coverRemoved) {
+        form.append('cover_image', '')
+      }
+
+      Object.entries(profile).forEach(([k, v]) => { if (v !== undefined) form.append(k, v) })
       form.append('skills', JSON.stringify(profileSkills))
       form.append('experience', JSON.stringify(experiences))
       form.append('education',  JSON.stringify(educations))
 
-      await apiClient.updateProfile(form)
+      const res = await apiClient.updateProfile(form)
       setSuccess('Profile updated successfully!')
       setProfilePhoto(null); setCoverImage(null)
+      setPhotoRemoved(false); setCoverRemoved(false)
+      if (res.data?.user) {
+        dispatch(setUser(res.data.user))
+      }
     } catch (err: any) {
       const raw = err?.response?.data?.message
       const text = Array.isArray(raw) ? raw.join('. ') : (raw || err?.message || 'Failed to update profile')
@@ -1051,13 +1081,25 @@ export default function SettingsPage() {
 
                 <div className="bg-white rounded-2xl border p-6" style={{ border: '1px solid #E8E8E8' }}>
 
-                  <h2 className="text-xl font-semibold mb-1" style={{ color: '#212529' }}>Cover Image</h2>
+                  <div className="flex items-center justify-between mb-1">
+                    <div>
+                      <h2 className="text-xl font-semibold" style={{ color: '#212529' }}>Cover Image</h2>
+                      <p className="text-xs text-gray-400 mt-0.5">Recommended: 1584×396px (16:5 ratio)</p>
+                    </div>
+                    {coverPreview && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveCover}
+                        className="text-xs text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/80 px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-medium transition cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Remove Cover Image
+                      </button>
+                    )}
+                  </div>
 
-                  <p className="text-xs text-gray-400 mb-3">Recommended: 1584×396px (16:5 ratio)</p>
+                  <label className="block cursor-pointer mt-3">
 
-                  <label className="block cursor-pointer">
-
-                    <div className="w-full rounded-xl overflow-hidden border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors flex items-center justify-center bg-gray-50"
+                    <div className="w-full rounded-xl overflow-hidden border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors flex items-center justify-center bg-gray-50 relative group"
 
                       style={{ aspectRatio: '16/5' }}>
 
@@ -1081,16 +1123,8 @@ export default function SettingsPage() {
 
                   </label>
 
-                  {coverImage && (
-
-                    <button type="button" onClick={() => { setCoverImage(null); setCoverPreview(null) }}
-
-                      className="mt-2 text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
-
-                      <X className="w-3 h-3" /> Remove
-
-                    </button>
-
+                  {coverPreview && (
+                    <p className="mt-2 text-xs text-gray-400">Click banner above to replace with a new image</p>
                   )}
 
                 </div>
@@ -1101,11 +1135,22 @@ export default function SettingsPage() {
 
                 <div className="bg-white rounded-2xl border p-6" style={{ border: '1px solid #E8E8E8' }}>
 
-                  <h2 className="text-xl font-semibold mb-4" style={{ color: '#212529' }}>Profile Photo</h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold" style={{ color: '#212529' }}>Profile Photo</h2>
+                    {photoPreview && (
+                      <button
+                        type="button"
+                        onClick={handleRemovePhoto}
+                        className="text-xs text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/80 px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-medium transition cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Remove Profile Photo
+                      </button>
+                    )}
+                  </div>
 
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
 
-                    <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0">
+                    <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200 shadow-2xs">
 
                       {photoPreview
 
@@ -1117,29 +1162,19 @@ export default function SettingsPage() {
 
                     </div>
 
-                    <div className="flex-1">
+                    <div className="flex-1 w-full">
 
-                      <label className="flex items-center justify-center w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 transition-colors">
+                      <label className="flex items-center justify-center w-full px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 transition-colors">
 
                         <Upload className="w-4 h-4 mr-2 text-gray-500" />
 
-                        <span className="text-sm text-gray-600">Click to upload or drag and drop</span>
+                        <span className="text-sm text-gray-600">
+                          {photoPreview ? 'Click to change profile photo' : 'Click to upload or drag and drop'}
+                        </span>
 
                         <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
 
                       </label>
-
-                      {profilePhoto && (
-
-                        <button type="button" onClick={() => { setProfilePhoto(null); setPhotoPreview(null) }}
-
-                          className="mt-1 text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
-
-                          <X className="w-3 h-3" /> Remove
-
-                        </button>
-
-                      )}
 
                     </div>
 
@@ -1182,6 +1217,8 @@ export default function SettingsPage() {
                     initial={businessInitial}
                     profilePhoto={profilePhoto}
                     coverImage={coverImage}
+                    photoRemoved={photoRemoved}
+                    coverRemoved={coverRemoved}
                     onSaved={(user) => {
                       const nextType = user?.account_type || ACCOUNT_TYPE.BUSINESS
                       setAccountType(nextType)

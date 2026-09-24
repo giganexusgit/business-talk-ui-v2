@@ -18,6 +18,8 @@ type Props = {
   initial: BusinessProfileFields
   profilePhoto?: File | null
   coverImage?: File | null
+  photoRemoved?: boolean
+  coverRemoved?: boolean
   onSaved?: (user: any) => void
 }
 
@@ -49,7 +51,14 @@ function FieldLabel({ children, required }: { children: React.ReactNode; require
   )
 }
 
-export default function BusinessInformationForm({ initial, profilePhoto, coverImage, onSaved }: Props) {
+export default function BusinessInformationForm({
+  initial,
+  profilePhoto,
+  coverImage,
+  photoRemoved,
+  coverRemoved,
+  onSaved,
+}: Props) {
   const [form, setForm] = useState<BusinessProfileFields>({ ...EMPTY, ...initial })
   const [galleryUrls, setGalleryUrls] = useState<string[]>(parseGalleryList(initial.business_gallery))
   const [galleryFiles, setGalleryFiles] = useState<{ file: File; preview: string }[]>([])
@@ -185,8 +194,20 @@ export default function BusinessInformationForm({ initial, profilePhoto, coverIm
       data.append('business_about', form.business_about!.trim())
       data.append('business_products_services', form.business_products_services!.trim())
       data.append('business_gallery', JSON.stringify(galleryUrls))
-      if (profilePhoto) data.append('profile_photo', profilePhoto)
-      if (coverImage) data.append('cover_image', coverImage)
+      if (profilePhoto) {
+        data.append('profile_photo', profilePhoto)
+        data.append('business_logo', profilePhoto)
+      } else if (photoRemoved) {
+        data.append('profile_photo', '')
+        data.append('business_logo', '')
+      }
+
+      if (coverImage) {
+        data.append('cover_image', coverImage)
+      } else if (coverRemoved) {
+        data.append('cover_image', '')
+      }
+
       galleryFiles.forEach((item) => data.append('gallery_images', item.file))
 
       const res = await apiClient.updateProfile(data)

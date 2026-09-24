@@ -8,6 +8,8 @@ import {
   clearTypingUser,
   wsUserOnline,
   wsUserOffline,
+  setOnlineUsers,
+  fetchPresence,
   fetchConversations,
 } from '@/redux/slices/chatSlice';
 import { registerWsManager } from '@/redux/middleware/websocketMiddleware';
@@ -23,6 +25,7 @@ import { normalizeMessage } from '@/lib/chat/normalizeMessage';
 import {
   parseWsMessagePayload,
   parseWsPresencePayload,
+  parseWsPresenceSyncPayload,
   parseWsTypingPayload,
 } from '@/lib/chat/websocketPayloads';
 import {
@@ -202,6 +205,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       if (shouldRefreshConversations) {
         store.dispatch(fetchConversations());
       }
+      // Always fetch latest presence on connect / reconnect
+      store.dispatch(fetchPresence());
 
       if (process.env.NODE_ENV === 'development') {
         console.log('[chat-realtime] socket connected', {
@@ -515,6 +520,12 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       const payload = parseWsPresencePayload(data);
       if (!payload) return;
       store.dispatch(wsUserOffline(payload.userId));
+    }));
+
+    unsubscribers.push(ws.on(CHAT_EVENTS.PRESENCE_SYNC, (data: unknown) => {
+      const payload = parseWsPresenceSyncPayload(data);
+      if (!payload) return;
+      store.dispatch(setOnlineUsers(payload.onlineUserIds));
     }));
 
     // ── Incoming notification → Redux (req 7: no component-level WS listeners) ─

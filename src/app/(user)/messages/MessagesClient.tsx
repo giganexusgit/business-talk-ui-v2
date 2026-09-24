@@ -194,11 +194,14 @@ const ConversationItem = React.memo<ConversationItemProps>(({
           </div>
         )}
         {conv.isGroup ? (
-          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white">
+          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
             <Users className="w-2 h-2 text-white" />
           </div>
         ) : isOnline ? (
-          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+          <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center">
+            <span className="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white shadow-xs" />
+          </div>
         ) : null}
       </div>
 
@@ -330,6 +333,15 @@ const MessagesClient = () => {
   const [showMobileList, setShowMobileList] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
+  // ── Online toast state ─────────────────────────────────────────────────────
+  const [onlineToast, setOnlineToast] = useState<{
+    userName: string;
+    avatar?: string;
+    userId: string;
+  } | null>(null);
+  const prevOnlineUsersRef = useRef<Set<string>>(new Set());
+  const initialOnlineLoadedRef = useRef(false);
+
   // ── Attachment state ───────────────────────────────────────────────────────
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
@@ -439,6 +451,46 @@ const MessagesClient = () => {
     }
   );
 }, [userIdFromURL, dispatch]);
+
+  // Detect live users coming online and trigger live toast badge
+  useEffect(() => {
+    const currentSet = new Set(onlineUsers);
+
+    if (!initialOnlineLoadedRef.current) {
+      if (onlineUsers.length > 0) {
+        initialOnlineLoadedRef.current = true;
+        prevOnlineUsersRef.current = currentSet;
+      }
+      return;
+    }
+
+    for (const id of onlineUsers) {
+      if (!prevOnlineUsersRef.current.has(id) && id !== currentUserId) {
+        const matchedConv =
+          conversations.find((c) => c.participantId === id) ||
+          archivedConversations.find((c) => c.participantId === id);
+
+        if (matchedConv) {
+          setOnlineToast({
+            userName: matchedConv.name,
+            avatar: matchedConv.avatar,
+            userId: id,
+          });
+          break;
+        }
+      }
+    }
+
+    prevOnlineUsersRef.current = currentSet;
+  }, [onlineUsers, conversations, archivedConversations, currentUserId]);
+
+  useEffect(() => {
+    if (!onlineToast) return;
+    const timer = setTimeout(() => {
+      setOnlineToast(null);
+    }, 4500);
+    return () => clearTimeout(timer);
+  }, [onlineToast]);
 
   // Reset near-bottom anchor when switching conversations
   useEffect(() => {
@@ -900,7 +952,10 @@ const MessagesClient = () => {
                 className="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover"
               />
               {activeConvIsOnline && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+                <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center">
+                  <span className="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white shadow-xs" />
+                </div>
               )}
             </div>
           ) : (
@@ -917,24 +972,79 @@ const MessagesClient = () => {
                 className="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover cursor-pointer"
               />
               {activeConvIsOnline && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+                <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center">
+                  <span className="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white shadow-xs" />
+                </div>
               )}
             </button>
           )}
 
           <div className="min-w-0 flex-1">
-            <h2 className="font-semibold text-sm md:text-base truncate">
-              {selectedConversation.name}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold text-sm md:text-base truncate text-gray-900">
+                {selectedConversation.name}
+              </h2>
+              {activeConvIsOnline && (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                  Online
+                </span>
+              )}
+            </div>
             {typingUser ? (
               <p className="text-xs text-green-600 italic">
                 {typingUser} is typing&hellip;
               </p>
             ) : activeConvIsOnline ? (
-              <p className="text-xs text-green-600">Online</p>
-            ) : null}
+              <p className="text-xs text-emerald-600 font-medium">Active now</p>
+            ) : (
+              <p className="text-xs text-gray-400">Offline</p>
+            )}
           </div>
         </div>
+
+        {/* Live Online Toast Badge */}
+        {onlineToast && (
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 transition-all duration-300 transform animate-in fade-in slide-in-from-top-3">
+            <div className="flex items-center gap-2.5 px-4 py-2 bg-gray-900/95 backdrop-blur-md text-white rounded-full shadow-xl border border-white/10 text-xs font-medium">
+              <div className="relative shrink-0">
+                {onlineToast.avatar ? (
+                  <img
+                    src={onlineToast.avatar}
+                    alt={onlineToast.userName}
+                    className="w-5 h-5 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-gray-700 flex items-center justify-center text-[10px] text-white">
+                    {onlineToast.userName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-gray-900" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-white truncate max-w-[140px]">
+                  {onlineToast.userName}
+                </span>
+                <span className="text-emerald-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  is online now
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOnlineToast(null)}
+                className="ml-1 p-0.5 text-gray-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                aria-label="Dismiss toast"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Messages area */}
         <div

@@ -229,6 +229,23 @@ export const sendMessage = createAsyncThunk(
   },
 );
 
+export const fetchPresence = createAsyncThunk(
+  'chat/fetchPresence',
+  async (_: void, { rejectWithValue }) => {
+    try {
+      const res = await apiClient.getPresence();
+      const rows: string[] = Array.isArray(res.data)
+        ? res.data
+        : (res.data?.data ?? res.data?.users ?? []);
+      return rows.map(String);
+    } catch (err: any) {
+      return rejectWithValue(
+        err.response?.data?.message ?? 'Failed to fetch presence',
+      );
+    }
+  },
+);
+
 // ─── Initial state ─────────────────────────────────────────────────────────────
 
 const initialState: ChatState = {
@@ -329,6 +346,10 @@ const chatSlice = createSlice({
 
     wsUserOffline(state, action: PayloadAction<string>) {
       state.onlineUsers = state.onlineUsers.filter((id) => id !== action.payload);
+    },
+
+    setOnlineUsers(state, action: PayloadAction<string[]>) {
+      state.onlineUsers = Array.from(new Set(action.payload.map(String)));
     },
 
     markConversationRead(state, action: PayloadAction<string>) {
@@ -489,6 +510,11 @@ const chatSlice = createSlice({
         console.warn('[chat] markConversationReadServer failed', action.error || action.payload);
       }
     });
+
+    // ── fetchPresence ────────────────────────────────────────────────────────
+    builder.addCase(fetchPresence.fulfilled, (state, action) => {
+      state.onlineUsers = Array.from(new Set(action.payload.map(String)));
+    });
   },
 });
 
@@ -499,6 +525,7 @@ export const {
   clearTypingUser,
   wsUserOnline,
   wsUserOffline,
+  setOnlineUsers,
   markConversationRead,
   addPendingMessage,
   removeOptimisticMessage,

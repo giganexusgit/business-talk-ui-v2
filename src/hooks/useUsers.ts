@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/api-client'
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux'
 import { fetchNotifications, fetchUnreadCount } from '@/redux/slices/notificationsSlice'
@@ -15,40 +14,40 @@ export function useUsers() {
   const queryClient = useQueryClient()
   const dispatch = useAppDispatch()
   const currentUserId = useAppSelector((state) => String(state.auth?.user?.id || ''))
-  const [users, setUsers] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const isGuest =
-      typeof window !== 'undefined' &&
-      !localStorage.getItem('user')
+  const { data: users = [], isLoading: loading, refetch } = useQuery<any[]>({
+    queryKey: ['people', currentUserId],
+    queryFn: async () => {
+      try {
+        const res = await apiClient.getPeople({ limit: 100 })
+        const rawData = res.data?.data || (Array.isArray(res.data) ? res.data : [])
+        const list = Array.isArray(rawData) ? rawData : []
+        return currentUserId ? list.filter((u: any) => String(u?.id) !== currentUserId) : list
+      } catch (err) {
+        console.warn('Failed to fetch people from /user/people, fallback to suggestions', err)
+        const fallbackRes = await apiClient.getFollowSuggestions()
+        const rawFallback = fallbackRes.data?.data || (Array.isArray(fallbackRes.data) ? fallbackRes.data : [])
+        const list = Array.isArray(rawFallback) ? rawFallback : []
+        return currentUserId ? list.filter((u: any) => String(u?.id) !== currentUserId) : list
+      }
+    },
+    refetchInterval: 8000, // ⚡ Live background sync every 8 seconds
+    refetchOnWindowFocus: true,
+    staleTime: 3000,
+  })
 
-    if (isGuest) {
-      setLoading(false)
-      return
-    }
-
-    fetchUsers()
-  }, [])
-
-  const fetchUsers = async () => {
-    try {
-      const res = await apiClient.getFollowSuggestions()
-      setUsers(res.data || [])
-    } catch (err) {
-      console.error('Failed to fetch users', err)
-    } finally {
-      setLoading(false)
-    }
+  const setUsersOptimistic = (updater: (prev: any[]) => any[]) => {
+    queryClient.setQueryData(['people', currentUserId], (old: any[] | undefined) => {
+      return updater(old || [])
+    })
   }
 
   const followUser = async (id: string) => {
     try {
       updateConnectionCacheOnFollow(queryClient, currentUserId, id)
       await apiClient.followUserById(id)
-
-      // 🔥 instant UI update
-      setUsers(prev => prev.filter(u => String(u.id) !== String(id)))
+      setUsersOptimistic((prev) => prev.filter((u) => String(u.id) !== String(id)))
+      queryClient.invalidateQueries({ queryKey: ['people'] })
     } catch (err) {
       console.error('Follow failed', err)
       updateConnectionCacheOnDelete(queryClient, currentUserId, id)
@@ -68,9 +67,10 @@ export function useUsers() {
     try {
       updateConnectionCacheOnAccept(queryClient, currentUserId, targetUserId)
       await apiClient.acceptConnectionRequest(requestId)
-      setUsers(prev => prev.filter((item) => String(item.id) !== String(user.id)))
+      setUsersOptimistic(prev => prev.filter((item) => String(item.id) !== String(user.id)))
       dispatch(fetchNotifications({ force: true }))
       dispatch(fetchUnreadCount())
+      queryClient.invalidateQueries({ queryKey: ['people'] })
     } catch (err) {
       console.error('Accept connection request failed', err)
       updateConnectionCacheOnDelete(queryClient, currentUserId, targetUserId)
@@ -85,9 +85,10 @@ export function useUsers() {
     try {
       updateConnectionCacheOnDelete(queryClient, currentUserId, targetUserId)
       await apiClient.deleteConnectionRequest(requestId)
-      setUsers(prev => prev.filter((item) => String(item.id) !== String(user.id)))
+      setUsersOptimistic(prev => prev.filter((item) => String(item.id) !== String(user.id)))
       dispatch(fetchNotifications({ force: true }))
       dispatch(fetchUnreadCount())
+      queryClient.invalidateQueries({ queryKey: ['people'] })
     } catch (err) {
       console.error('Delete connection request failed', err)
     }
@@ -103,9 +104,10 @@ export function useUsers() {
       } else if (targetUserId) {
         await apiClient.unfollowUserById(targetUserId)
       }
-      setUsers(prev => prev.filter((item) => String(item.id) !== String(user.id)))
+      setUsersOptimistic(prev => prev.filter((item) => String(item.id) !== String(user.id)))
       dispatch(fetchNotifications({ force: true }))
       dispatch(fetchUnreadCount())
+      queryClient.invalidateQueries({ queryKey: ['people'] })
     } catch (err) {
       console.error('Cancel connection request failed', err)
     }
@@ -115,11 +117,11 @@ export function useUsers() {
     try {
       updateConnectionCacheOnDelete(queryClient, currentUserId, id)
       await apiClient.unfollowUserById(id)
-      fetchUsers()
+      queryClient.invalidateQueries({ queryKey: ['people'] })
     } catch (err) {
       console.error('Unfollow failed', err)
     }
   }
 
-  return { users, loading, followUser, unfollowUser, acceptConnectionRequest, deleteConnectionRequest, cancelConnectionRequest }
+  return { users, loading, refetch, followUser, unfollowUser, acceptConnectionRequest, deleteConnectionRequest, cancelConnectionRequest }
 }

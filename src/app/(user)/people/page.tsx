@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react'
 import { useUsers } from '@/hooks/useUsers'
 import { useFollow } from '@/hooks/useFollow'
 import { useAppSelector } from '@/hooks/useRedux'
+import { selectOnlineUsers } from '@/redux/selectors/chatSelectors'
 import { profileHref } from '@/lib/profile-link'
 import {
   displayAvatarFromUser,
@@ -110,23 +111,37 @@ function PeopleCard({
   const displayAvatar = displayAvatarFromUser(user)
   const displayTitle = displayTitleFromUser(user) || 'Professional'
 
+  const onlineUsers = useAppSelector(selectOnlineUsers)
+  const isOnline = onlineUsers.includes(String(user.id || ''))
+
   return (
     <Link
       href={profileHref(user.id, displayName)}
       className="block group"
     >
-      <div className="bg-white rounded-2xl border p-6 transition hover:shadow-md hover:scale-[1.02]">
+      <div className="bg-white rounded-2xl border p-6 transition hover:shadow-md hover:scale-[1.02] relative">
 
         {/* Avatar */}
         <div className="flex flex-col items-center text-center mb-4">
-          <img
-            src={displayAvatar || `https://ui-avatars.com/api/name=${encodeURIComponent(displayName || 'User')}`}
-            alt={displayName || 'User Avatar'}
-            className="w-20 h-20 rounded-full object-cover mb-3 border"
-          />
+          <div className="relative mb-3 inline-block">
+            <img
+              src={displayAvatar || `https://ui-avatars.com/api/name=${encodeURIComponent(displayName || 'User')}`}
+              alt={displayName || 'User Avatar'}
+              className="w-20 h-20 rounded-full object-cover border"
+            />
+            {isOnline && (
+              <span
+                className="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full shadow-xs"
+                title="Online now"
+              />
+            )}
+          </div>
 
-          <h3 className="font-semibold text-lg">
-            {displayName}
+          <h3 className="font-semibold text-lg flex items-center justify-center gap-1.5">
+            <span>{displayName}</span>
+            {isOnline && (
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Active now" />
+            )}
           </h3>
 
           <p className="text-sm text-gray-500">

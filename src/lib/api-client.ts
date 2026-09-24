@@ -900,6 +900,10 @@ class ApiClient {
     return this.client.get('/follow/suggestions')
   }
 
+  getPeople(params?: Record<string, any>) {
+    return this.client.get('/user/people', { params })
+  }
+
   getFollowers(id: string) {
     return this.client.get(`/follow/${id}/followers`)
   }
@@ -922,6 +926,10 @@ class ApiClient {
 
   getConversations() {
     return this.client.get('/chat/my/conversations')
+  }
+
+  getPresence() {
+    return this.client.get('/chat/presence')
   }
 
   // FIXED — cursor pagination: pass `before` (Unix ms string) to load older messages

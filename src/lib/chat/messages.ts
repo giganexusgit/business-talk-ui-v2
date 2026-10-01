@@ -50,7 +50,10 @@ export function updateMessageInInfiniteData(
           }
         }
         pageModified = true;
-        return { ...current, ...update };
+        const cleanUpdate = Object.fromEntries(
+          Object.entries(update).filter(([_, v]) => v !== undefined)
+        );
+        return { ...current, ...cleanUpdate };
       }
 
       // If a 'seen' event arrives, mark all sent/delivered messages as seen

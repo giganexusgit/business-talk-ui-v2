@@ -499,10 +499,6 @@ const chatSlice = createSlice({
       if (conv) conv.unread = 0;
       const convMsg = state.messages.byConversation[convId];
       if (convMsg) convMsg.unreadCount = 0;
-      // Optionally update lastMessageAt if server provided an updatedAt timestamp
-      if (payload?.updatedAt && conv) {
-        conv.lastMessageAt = payload.updatedAt;
-      }
     });
 
     builder.addCase(markConversationReadServer.rejected, (_state, action) => {

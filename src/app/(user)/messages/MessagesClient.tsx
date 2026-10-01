@@ -425,14 +425,13 @@ const MessagesClient = () => {
       if (activeConversationId !== found.id) {
         dispatch(setActiveConversation(found.id));
       }
-    } else if (!activeConversationId) {
+    } else if (!activeConversationId && conversations.length > 0) {
       dispatch(setActiveConversation(conversations[0].id));
     }
   }, [
     conversationsReady,
     conversations,
     conversationIdFromURL,
-    activeConversationId,
     dispatch,
   ]);
 
@@ -616,8 +615,9 @@ const MessagesClient = () => {
     (id: string) => {
       dispatch(setActiveConversation(id));
       setShowMobileList(false);
+      router.replace(`/messages?conversationId=${id}`, { scroll: false });
     },
-    [dispatch],
+    [dispatch, router],
   );
 
   const scrollToBottom = useCallback(() => {
@@ -1109,8 +1109,11 @@ const MessagesClient = () => {
               return (
                 <React.Fragment key={`${msg.id}-${msg.updatedAt || msg.createdAt}`}>
                   {showDateDivider && (
-                    <div className="flex justify-center my-3">
-                      <span className="px-3 py-1 bg-white/95 backdrop-blur-xs border border-gray-200/90 rounded-full text-[11px] font-medium text-gray-500 shadow-2xs">
+                    <div className="relative flex items-center justify-center my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-200/70" />
+                      </div>
+                      <span className="relative px-3.5 py-1 bg-white border border-gray-200/80 rounded-full text-xs font-medium text-gray-600 shadow-2xs">
                         {formatChatDateDivider(msg.createdAt)}
                       </span>
                     </div>
@@ -1123,6 +1126,17 @@ const MessagesClient = () => {
                     }
                     isGroup={selectedConversation.isGroup}
                     displayTime={formatChatTimestamp(msg.createdAt)}
+                    senderAvatar={
+                      selectedConversation.avatar ||
+                      (selectedConversation as any).profilePhoto ||
+                      (selectedConversation as any).profile_photo
+                    }
+                    myAvatar={
+                      authUser?.profilePhoto ||
+                      authUser?.profile_photo ||
+                      authUser?.avatar ||
+                      authUser?.image
+                    }
                   />
                 </React.Fragment>
               );

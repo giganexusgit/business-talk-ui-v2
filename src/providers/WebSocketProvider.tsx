@@ -21,6 +21,7 @@ import {
   deleteMessageFromCache,
 } from '@/hooks/useInfiniteMessages';
 import { CHAT_EVENTS } from '@/lib/chat/events';
+import type { MessageEntity } from '@/types/chat';
 import { normalizeMessage } from '@/lib/chat/normalizeMessage';
 import {
   parseWsMessagePayload,
@@ -433,13 +434,16 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Update message in React Query cache without refetch
       // Part 5: Stale-event guards in updateMessageInCache prevent duplicates
-      updateMessageInCache(queryClient, conversationId, {
+      const updatePayload: Partial<MessageEntity> & { id: string; updatedAt?: number } = {
         id: messageId,
-        status: update.status,
-        text: update.content,
-        isDeleted: update.isDeleted,
-        updatedAt: update.updatedAt,
-      });
+        ...(update.status !== undefined && { status: update.status }),
+        ...(update.content !== undefined && { text: update.content }),
+        ...(update.text !== undefined && { text: update.text }),
+        ...(update.isDeleted !== undefined && { isDeleted: update.isDeleted }),
+        ...(update.updatedAt !== undefined && { updatedAt: update.updatedAt }),
+      };
+
+      updateMessageInCache(queryClient, conversationId, updatePayload);
 
       // Part 6: Invalidate conversations for sidebar preview recalculation
       if (update.status || update.isDeleted) {

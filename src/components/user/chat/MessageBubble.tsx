@@ -20,7 +20,12 @@ function FileTypeIcon({ typeStr }: { typeStr: string }) {
   return <File className="w-5 h-5 text-blue-500 shrink-0" />;
 }
 
-function SharedPreview({ message }: { message: MessageEntity }) {
+function SharedPreview({
+  message,
+}: {
+  message: MessageEntity;
+  isMine?: boolean;
+}) {
   if (message.messageType !== 'blog' && message.messageType !== 'post') {
     return null;
   }
@@ -47,7 +52,7 @@ function SharedPreview({ message }: { message: MessageEntity }) {
       href={preview.url || '#'}
       target={preview.url ? '_blank' : undefined}
       rel={preview.url ? 'noreferrer' : undefined}
-      className="mt-2 block rounded-lg border border-gray-200 overflow-hidden bg-white"
+      className="mt-2 block rounded-xl border border-gray-200 bg-gray-50/70 text-gray-900 overflow-hidden transition-opacity hover:opacity-95"
     >
       {imgSrc && (
         <div className="w-full h-36 bg-gray-100">
@@ -63,17 +68,23 @@ function SharedPreview({ message }: { message: MessageEntity }) {
         </div>
       )}
 
-      <div className="p-2">
-        <p className="text-[11px] uppercase tracking-wide text-gray-500">
+      <div className="p-2.5">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
           {preview.type || 'POST'}
         </p>
 
         {title ? (
-          <RichTextContent className="text-sm font-semibold text-gray-900 line-clamp-2" html={title} />
+          <RichTextContent
+            className="text-sm font-semibold line-clamp-2 mt-0.5 text-gray-900"
+            html={title}
+          />
         ) : null}
 
         {description ? (
-          <RichTextContent className="text-xs text-gray-600 line-clamp-2" html={description} />
+          <RichTextContent
+            className="text-xs line-clamp-2 mt-1 text-gray-600"
+            html={description}
+          />
         ) : null}
       </div>
     </a>
@@ -85,6 +96,7 @@ function AttachmentBlock({
   onPreviewImage,
 }: {
   message: MessageEntity;
+  isMine?: boolean;
   onPreviewImage?: (url: string, name?: string) => void;
 }) {
   if (!message.attachments?.length) return null;
@@ -110,7 +122,7 @@ function AttachmentBlock({
                 }}
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                <span className="opacity-0 group-hover:opacity-100 bg-black/65 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm transition-opacity">
+                <span className="opacity-0 group-hover:opacity-100 bg-black/75 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-xs transition-opacity">
                   Click to view
                 </span>
               </div>
@@ -144,19 +156,22 @@ function AttachmentBlock({
         return (
           <div
             key={attachment.id}
-            className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-white/90 shadow-sm max-w-sm"
+            className="flex items-center gap-3 p-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 max-w-sm"
           >
             <FileTypeIcon typeStr={attachment.fileName || attachment.mimeType || ''} />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-gray-800 truncate" title={attachment.fileName || 'Attachment'}>
+              <p
+                className="text-xs font-semibold truncate text-gray-800"
+                title={attachment.fileName || 'Attachment'}
+              >
                 {attachment.fileName || 'Attachment'}
               </p>
               {attachment.size ? (
-                <p className="text-[11px] text-gray-500 mt-0.5">
+                <p className="text-[11px] mt-0.5 text-gray-500">
                   {formatFileSize(attachment.size)}
                 </p>
               ) : (
-                <p className="text-[11px] text-gray-400 uppercase tracking-wide mt-0.5">
+                <p className="text-[11px] uppercase tracking-wide mt-0.5 text-gray-400">
                   {category}
                 </p>
               )}
@@ -167,7 +182,7 @@ function AttachmentBlock({
                 target="_blank"
                 rel="noreferrer"
                 download={attachment.fileName || true}
-                className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors shrink-0 flex items-center gap-1"
+                className="p-1.5 rounded-lg bg-gray-200/80 hover:bg-gray-300 text-gray-700 transition-colors shrink-0 flex items-center gap-1"
                 title="Download / Open attachment"
               >
                 <Download className="w-4 h-4" />
@@ -191,8 +206,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   if (message.isDeleted) {
     return (
-      <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-        <div className="px-3 py-2 rounded-2xl text-sm italic text-gray-400 bg-gray-100 border border-dashed border-gray-300">
+      <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} py-0.5`}>
+        <div className="px-3 py-1.5 rounded-2xl text-xs italic text-gray-400 bg-gray-100/80 border border-dashed border-gray-200">
           This message was deleted
         </div>
       </div>
@@ -201,7 +216,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   return (
     <>
-      <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+      <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} py-0.5 group`}>
         {!isMine && isGroup && (
           <img
             src={
@@ -212,25 +227,23 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             onError={(e) => {
               e.currentTarget.style.display = 'none';
             }}
-            className="w-6 h-6 md:w-7 md:h-7 rounded-full mr-2 self-end shrink-0"
+            className="w-7 h-7 rounded-full mr-2 self-end shrink-0 mb-0.5"
           />
         )}
 
-        <div className="max-w-[calc(100%-4rem)] md:max-w-[70%]">
+        <div className="max-w-[85%] sm:max-w-[75%] md:max-w-[65%]">
           {!isMine && isGroup && (
-            <p className="text-xs text-gray-500 ml-1 mb-1">{message.senderName}</p>
+            <p className="text-[11px] font-medium text-gray-500 ml-1.5 mb-1">{message.senderName}</p>
           )}
 
           <div
-            className={`px-3 py-2 rounded-2xl text-sm break-words whitespace-pre-wrap ${
-              isMine
-                ? 'bg-[#DCF8C6] text-black rounded-br-sm'
-                : 'bg-gray-100 text-black rounded-bl-sm'
-            } ${message.status === 'pending' ? 'opacity-60' : ''}`}
+            className={`px-3.5 py-2 rounded-2xl text-[14px] leading-relaxed break-words whitespace-pre-wrap transition-shadow bg-white text-black border border-gray-200/90 shadow-xs ${
+              isMine ? 'rounded-br-xs' : 'rounded-bl-xs'
+            } ${message.status === 'pending' ? 'opacity-70' : ''}`}
           >
             {message.text ? (
               <div
-                className="break-words whitespace-normal"
+                className="break-words whitespace-normal text-black"
                 dangerouslySetInnerHTML={renderMessageHtml(message.text)}
               />
             ) : null}
@@ -242,13 +255,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 setActivePreviewName(name);
               }}
             />
-            <div className="flex items-center justify-end gap-1 mt-1">
-              <span className="text-[10px] text-gray-500">{displayTime}</span>
+            <div className="flex items-center justify-end gap-1 mt-1 select-none text-gray-400">
+              <span className="text-[10px] tracking-tight">{displayTime}</span>
               {isMine && (
-                <span className="flex items-center">
+                <span className="flex items-center ml-0.5">
                   {message.status === 'pending' ? (
                     <span className="flex items-center" title="Sending...">
-                      <Clock className="w-3 h-3 text-gray-500 shrink-0" aria-hidden />
+                      <Clock className="w-3 h-3 text-gray-400 shrink-0" aria-hidden />
                       <span className="sr-only">Sending</span>
                     </span>
                   ) : message.status === 'failed' ? (
@@ -257,18 +270,18 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                       <span className="sr-only">Failed</span>
                     </span>
                   ) : message.status === 'seen' ? (
-                    <span className="flex items-center" title="Seen">
-                      <CheckCheck className="w-3.5 h-3.5 text-green-600 shrink-0" aria-hidden />
+                    <span className="flex items-center" title="Read / Seen">
+                      <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb] shrink-0" aria-hidden />
                       <span className="sr-only">Seen</span>
                     </span>
                   ) : message.status === 'delivered' ? (
                     <span className="flex items-center" title="Delivered">
-                      <CheckCheck className="w-3.5 h-3.5 text-gray-500 shrink-0" aria-hidden />
+                      <CheckCheck className="w-3.5 h-3.5 text-gray-400 shrink-0" aria-hidden />
                       <span className="sr-only">Delivered</span>
                     </span>
                   ) : (
                     <span className="flex items-center" title="Sent">
-                      <Check className="w-3 h-3 text-gray-500 shrink-0" aria-hidden />
+                      <Check className="w-3 h-3 text-gray-400 shrink-0" aria-hidden />
                       <span className="sr-only">Sent</span>
                     </span>
                   )}

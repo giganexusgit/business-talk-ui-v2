@@ -37,44 +37,33 @@ export function updateMessageInInfiniteData(
 ): InfiniteData<MessagePage> | undefined {
   if (!old || old.pages.length === 0) return old;
 
-  let found = false;
+  const isSeenUpdate = update.status === 'seen';
+
   const pages = old.pages.map((page) => {
-    const idx = page.messages.findIndex((m) => m.id === update.id);
-    if (idx === -1) return page;
-
-    const current = page.messages[idx];
-    
-    // Part 7: Stale-event guard — ignore older updates than current updatedAt
-    if (update.updatedAt !== undefined && current.updatedAt !== undefined) {
-      if (update.updatedAt < current.updatedAt) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn(
-            '[chat-cache] Ignored stale update for message',
-            update.id,
-            'current updatedAt:',
-            current.updatedAt,
-            'received updatedAt:',
-            update.updatedAt,
-          );
+    let pageModified = false;
+    const next = page.messages.map((current) => {
+      if (current.id === update.id) {
+        // Stale-event guard — ignore older updates than current updatedAt
+        if (update.updatedAt !== undefined && current.updatedAt !== undefined) {
+          if (update.updatedAt < current.updatedAt) {
+            return current;
+          }
         }
-        return page;
+        pageModified = true;
+        return { ...current, ...update };
       }
-    }
 
-    found = true;
-    const next = page.messages.slice();
-    next[idx] = { ...current, ...update };
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[chat-cache] Updated message in cache:', update.id, update);
-    }
-    
-    return { ...page, messages: next };
+      // If a 'seen' event arrives, mark all sent/delivered messages as seen
+      if (isSeenUpdate && (current.status === 'sent' || current.status === 'delivered')) {
+        pageModified = true;
+        return { ...current, status: 'seen' as const };
+      }
+
+      return current;
+    });
+
+    return pageModified ? { ...page, messages: next } : page;
   });
-
-  if (!found && process.env.NODE_ENV === 'development') {
-    console.warn('[chat-cache] Message not found for update:', update.id);
-  }
 
   return { ...old, pages };
 }

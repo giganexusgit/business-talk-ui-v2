@@ -422,7 +422,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!data || typeof data !== 'object') return;
       const update = data as any;
       const conversationId = update.conversationId;
-      const messageId = update.id;
+      const messageId = update.messageId || update.id;
 
       if (!conversationId || !messageId) {
         if (process.env.NODE_ENV === 'development') {
@@ -464,7 +464,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!data || typeof data !== 'object') return;
       const deletion = data as any;
       const conversationId = deletion.conversationId;
-      const messageId = deletion.id;
+      const messageId = deletion.messageId || deletion.id;
 
       if (!conversationId || !messageId) {
         if (process.env.NODE_ENV === 'development') {

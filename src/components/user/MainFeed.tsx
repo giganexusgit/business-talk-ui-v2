@@ -11,7 +11,6 @@ import {
   Users,
   FileQuestion,
 } from 'lucide-react'
-import { useAuthWall } from '@/providers/AuthWallProvider'
 
 import { FeedPost } from './FeedPost'
 import { CreatePostBox } from './CreatePostBox'
@@ -47,58 +46,9 @@ function Highlight({ text, query }: { text: string; query: string }) {
 }
 
 export default function MainFeed() {
-  const { showLoginModal } =
-    useAuthWall()
-
-  const [guestWallShown,
-    setGuestWallShown] =
-    useState(false)
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'home' | 'qa' | 'stories'>('home')
-
-  useEffect(() => {
-    if (
-      typeof window === 'undefined'
-    )
-      return
-
-    const user =
-      localStorage.getItem('user')
-
-    if (user) return
-
-    const handleScroll = () => {
-      if (guestWallShown) return
-
-      const scrollPercent =
-        window.scrollY /
-        (document.body.scrollHeight -
-          window.innerHeight)
-
-      if (scrollPercent > 0.25) {
-        setGuestWallShown(true)
-
-        setTimeout(() => {
-          showLoginModal()
-        }, 500)
-      }
-    }
-
-    window.addEventListener(
-      'scroll',
-      handleScroll
-    )
-
-    return () =>
-      window.removeEventListener(
-        'scroll',
-        handleScroll
-      )
-  }, [
-    guestWallShown,
-    showLoginModal,
-  ])
 
   // Allow external links to open a specific tab and focus the composer
   useEffect(() => {

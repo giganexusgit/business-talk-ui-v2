@@ -6,9 +6,11 @@ import { useQueryClient } from '@tanstack/react-query'
 import { TagsPopup } from '@/components/shared/TagsPopup'
 import apiClient from '@/lib/api-client'
 import { validateImageFile, validateFileBeforeUpload } from '@/lib/utils'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 // import BasicEditor from '../editor/BasicEditor'
 
 export function ShareStoryBox() {
+  const requireAuth = useRequireAuth()
   const [storyTitle, setStoryTitle] = useState('')
   const [storyText, setStoryText] = useState('')
   const [coverImage, setCoverImage] = useState<File[]>([])
@@ -31,6 +33,7 @@ export function ShareStoryBox() {
   const [showMediaWarning, setShowMediaWarning] = useState(false)
 
   const handleSaveDraft = async () => {
+    if (!requireAuth()) return
     if (!storyTitle.trim() && !storyText.trim()) return
     try {
       setSavingDraft(true)
@@ -74,6 +77,7 @@ export function ShareStoryBox() {
   }
 
   const handleShareStory = async () => {
+    if (!requireAuth()) return
     if (!storyTitle && !storyText) return
 
     try {
@@ -126,6 +130,11 @@ export function ShareStoryBox() {
       <input
         value={storyTitle}
         onChange={(e) => setStoryTitle(e.target.value)}
+        onFocus={() => {
+          if (!requireAuth()) {
+            ;(document.activeElement as HTMLElement)?.blur()
+          }
+        }}
         placeholder="Give your story a compelling title..."
         className="w-full p-3 bg-gray-50 border rounded-xl"
       />
@@ -133,6 +142,11 @@ export function ShareStoryBox() {
       <textarea
         value={storyText}
         onChange={(e) => setStoryText(e.target.value)}
+        onFocus={() => {
+          if (!requireAuth()) {
+            ;(document.activeElement as HTMLElement)?.blur()
+          }
+        }}
         placeholder="Tell your story..."
         className="
           w-full
@@ -166,11 +180,26 @@ export function ShareStoryBox() {
             onChange={handleFileSelect}
             className="hidden"
           />
-          <label htmlFor="media-upload" className="cursor-pointer flex gap-2">
+          <label
+            htmlFor="media-upload"
+            onClick={(e) => {
+              if (!requireAuth()) {
+                e.preventDefault()
+              }
+            }}
+            className="cursor-pointer flex gap-2"
+          >
             <ImageIcon className='text-[#474b50]'/> Add Cover
           </label>
 
-          <button type="button" onClick={() => setShowTagsPopup(true)} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all">
+          <button
+            type="button"
+            onClick={() => {
+              if (!requireAuth()) return
+              setShowTagsPopup(true)
+            }}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+          >
             <Tag className="w-4 h-4" />
             Add Tags ({tags.length})
           </button>

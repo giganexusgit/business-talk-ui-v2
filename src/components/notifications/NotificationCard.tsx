@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getNotificationEntry, renderNotificationIcon } from '@/lib/notificationRegistry';
 import type { NotificationActor } from '@/types/notification';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 // ─── Relative-time formatter ─────────────────────────────────────────────────
 // Stored in UI layer only — raw createdAt ms is what lives in Redux.
@@ -57,6 +58,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
   actors,
   onConnectionRequestAction,
 }) => {
+  const requireAuth = useRequireAuth();
   // Live-updating relative timestamp — refreshes every minute
   const [relativeTime, setRelativeTime] = useState(() => getTimeAgo(createdAt));
   const [actionState, setActionState] = useState<'idle' | 'accepting' | 'deleting'>('idle');
@@ -84,6 +86,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 
   const handleAction = async (action: 'accept' | 'delete', event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation()
+    if (!requireAuth()) return
     if (!requestId || !onConnectionRequestAction) return
 
     setActionState(action === 'accept' ? 'accepting' : 'deleting')

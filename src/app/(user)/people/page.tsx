@@ -20,6 +20,7 @@ import {
   displayNameFromUser,
   displayTitleFromUser,
 } from '@/lib/business-profile'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 const categories = [
   'All',
@@ -36,6 +37,7 @@ function PeopleCard({
   onAcceptConnection: (user: any) => Promise<void> | void
   onDeleteConnection: (user: any) => Promise<void> | void
 }) {
+  const requireAuth = useRequireAuth()
   const currentUserId = useAppSelector((state) => String(state.auth?.user?.id || ''))
   const isPendingRequest = Boolean(
     user?.connection_request_id ||
@@ -67,6 +69,7 @@ function PeopleCard({
   const handleConnect = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     e.stopPropagation()
+    if (!requireAuth()) return
     if (isSelf || followLoading || !isHydrated) return
 
     if (followState === 'connected') {
@@ -81,6 +84,7 @@ function PeopleCard({
   const handlePendingAction = async (action: 'accept' | 'delete', e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     e.stopPropagation()
+    if (!requireAuth()) return
     if (actionState !== 'idle' || followLoading) return
 
     setActionState(action === 'accept' ? 'accepting' : 'deleting')

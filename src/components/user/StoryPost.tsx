@@ -732,16 +732,20 @@ export function StoryPost({
           </div>
 
           <button
-            onClick={() =>
+            onClick={() => {
+              if (!requireAuth()) return
               setShowComments(!showComments)
-            }
+            }}
           >
             <MessageCircle className="w-4 h-4 inline" />{' '}
             {nestedComments.length}
           </button>
 
           <button
-            onClick={() => setShowShareModal(true)}
+            onClick={() => {
+              if (!requireAuth()) return
+              setShowShareModal(true)
+            }}
             className="ml-auto"
           >
             <Send />

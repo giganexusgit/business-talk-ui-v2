@@ -877,7 +877,10 @@ export function QuestionPost({
             <Eye className="inline w-5 h-5" /> {views}
           </div>
 
-          <button className="ml-auto" onClick={() => setShowShareModal(true)}>
+          <button className="ml-auto" onClick={() => {
+            if (!requireAuth()) return
+            setShowShareModal(true)
+          }}>
             <Send className="inline w-5 h-5" />
           </button>
         </div>
@@ -885,7 +888,10 @@ export function QuestionPost({
         {/* ANSWER INPUT */}
         {!showAnswerBox ? (
           <button
-            onClick={() => setShowAnswerBox(true)}
+            onClick={() => {
+              if (!requireAuth()) return
+              setShowAnswerBox(true)
+            }}
             disabled={isBanned}
             className="mt-4 w-full border rounded-full py-3 flex items-center gap-1 justify-center text-gray-500 transition-all hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
           >

@@ -6,9 +6,11 @@ import { useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/api-client'
 import { useAccountStatus } from '@/hooks/useRedux'
 import { validateMediaFile, validateFileBeforeUpload } from '@/lib/utils'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 // import BasicEditor from '../editor/BasicEditor'
 
 export function CreatePostBox() {
+  const requireAuth = useRequireAuth()
   const { isBanned } = useAccountStatus()
   const [postContent, setPostContent] = useState('')
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -29,6 +31,7 @@ export function CreatePostBox() {
   const [showMediaWarning, setShowMediaWarning] = useState(false)
 
   const handleSaveDraft = async () => {
+    if (!requireAuth()) return
     if (!postContent.trim()) return
     try {
       setSavingDraft(true)
@@ -62,6 +65,7 @@ export function CreatePostBox() {
   }
 
   const handleCreatePost = async () => {
+    if (!requireAuth()) return
     if (!postContent.trim() && selectedFiles.length === 0) return
 
     try {
@@ -124,6 +128,11 @@ export function CreatePostBox() {
       <textarea
         value={postContent}
         onChange={(e) => setPostContent(e.target.value)}
+        onFocus={() => {
+          if (!requireAuth()) {
+            ;(document.activeElement as HTMLElement)?.blur()
+          }
+        }}
         placeholder={
           isBanned
             ? 'Your account is restricted'
@@ -192,7 +201,15 @@ export function CreatePostBox() {
           onChange={handleFileSelect}
           className="hidden"
         />
-        <label htmlFor="media-upload" className="cursor-pointer flex gap-2">
+        <label
+          htmlFor="media-upload"
+          onClick={(e) => {
+            if (!requireAuth()) {
+              e.preventDefault()
+            }
+          }}
+          className="cursor-pointer flex gap-2"
+        >
           <ImagePlay />
         </label>
 

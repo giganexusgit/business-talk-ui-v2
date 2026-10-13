@@ -6,12 +6,14 @@ import { ShareModal } from '@/components/shared/ShareModal'
 import { ContentData } from '@/hooks/useContentViewer'
 import { MediaGrid, MediaItem } from '@/components/shared/MediaGrid'
 import ExpandableText from '@/components/common/ExpandableText'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 interface PostViewCardProps {
   data: ContentData
 }
 
 export function PostViewCard({ data }: PostViewCardProps) {
+  const requireAuth = useRequireAuth()
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(data.likes || 0);
   const [showComments, setShowComments] = useState(false);
@@ -51,7 +53,10 @@ export function PostViewCard({ data }: PostViewCardProps) {
                       <span>{nestedReply.likes}</span>
                     </button>
                     <button
-                      onClick={() => setReplyingTo(replyingTo === `reply-${nestedReply.id}` ? null : `reply-${nestedReply.id}`)}
+                      onClick={() => {
+                        if (!requireAuth()) return;
+                        setReplyingTo(replyingTo === `reply-${nestedReply.id}` ? null : `reply-${nestedReply.id}`);
+                      }}
                       className="hover:opacity-70 transition-all">
                       Reply
                     </button>
@@ -96,6 +101,7 @@ export function PostViewCard({ data }: PostViewCardProps) {
 
   // Like/unlike post
   const handleLike = () => {
+    if (!requireAuth()) return;
     setLiked((prev) => {
       setLikeCount((count: number) => prev ? count - 1 : count + 1);
       return !prev;
@@ -104,6 +110,7 @@ export function PostViewCard({ data }: PostViewCardProps) {
 
   // Like/unlike comment or reply
   const handleLikeComment = (commentId: number, parentId?: number) => {
+    if (!requireAuth()) return;
     const itemId = parentId ? `${parentId}-reply-${commentId}` : `comment-${commentId}`;
     const isLiked = likedComments.has(itemId);
     const newLikedComments = new Set(likedComments);
@@ -163,6 +170,7 @@ export function PostViewCard({ data }: PostViewCardProps) {
 
   // Add a new comment
   const handleAddComment = () => {
+    if (!requireAuth()) return;
     if (commentInput.trim()) {
       const newComment = {
         id: Math.max(0, ...commentsList.map(c => c.id)) + 1,
@@ -179,6 +187,7 @@ export function PostViewCard({ data }: PostViewCardProps) {
 
   // Add a reply to a comment or reply
   const handleAddReply = (commentId: number, parentReplyId?: number) => {
+    if (!requireAuth()) return;
     if (replyInput.trim()) {
       const newReply = {
         id: Math.max(0, ...commentsList.flatMap(c => [c.id, ...(c.replies || []).map((r: any) => r.id)])) + 1,
@@ -230,6 +239,7 @@ export function PostViewCard({ data }: PostViewCardProps) {
   };
 
   const handleShare = () => {
+    if (!requireAuth()) return;
     setShowShareModal(true);
   };
 
@@ -279,7 +289,10 @@ export function PostViewCard({ data }: PostViewCardProps) {
           <span className="text-sm font-medium">{likeCount}</span>
         </button>
         <button
-          onClick={() => setShowComments(!showComments)}
+          onClick={() => {
+            if (!requireAuth()) return;
+            setShowComments(!showComments);
+          }}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
         >
           <MessageCircle className="w-5 h-5" />
@@ -309,6 +322,7 @@ export function PostViewCard({ data }: PostViewCardProps) {
                 type="text"
                 placeholder="Add a comment..."
                 value={commentInput}
+                onFocus={() => { if (!requireAuth()) return; }}
                 onChange={(e) => setCommentInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
                 className="flex-1 px-3 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -346,7 +360,10 @@ export function PostViewCard({ data }: PostViewCardProps) {
                         <span>{comment.likes}</span>
                       </button>
                       <button
-                        onClick={() => setReplyingTo(replyingTo === `reply-${comment.id}` ? null : `reply-${comment.id}`)}
+                        onClick={() => {
+                          if (!requireAuth()) return;
+                          setReplyingTo(replyingTo === `reply-${comment.id}` ? null : `reply-${comment.id}`);
+                        }}
                         className="hover:opacity-70 transition-all"
                       >
                         Reply

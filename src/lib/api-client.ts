@@ -330,10 +330,7 @@ class ApiClient {
                 !localStorage.getItem('user')
 
               if (isGuest) {
-                window.dispatchEvent(
-                  new CustomEvent('show-login-modal')
-                )
-
+                // Background request failed for guest - do not aggressively force popup
                 return Promise.reject(refreshError)
               }
 

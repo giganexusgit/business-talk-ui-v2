@@ -4,6 +4,7 @@ import { MapPin, Briefcase, X, ZoomIn } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import apiClient from '@/lib/api-client'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 export interface ProfileHeaderProps {
   profileData: any;
@@ -28,6 +29,7 @@ export function ProfileHeader({
 }: ProfileHeaderProps) {
 
   const router = useRouter()
+  const requireAuth = useRequireAuth()
   const [messagingLoading, setMessagingLoading] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [previewType, setPreviewType] = useState<'avatar' | 'cover' | null>(null)
@@ -87,6 +89,7 @@ export function ProfileHeader({
   }, [previewImage])
 
   const handleMessage = async () => {
+    if (!requireAuth()) return
     if (messagingLoading) return
     try {
       setMessagingLoading(true)
@@ -177,14 +180,20 @@ export function ProfileHeader({
               {connectState === 'incoming' ? (
                 <>
                   <button
-                    onClick={onAccept}
+                    onClick={() => {
+                      if (!requireAuth()) return
+                      onAccept?.()
+                    }}
                     disabled={loading}
                     className="px-4 py-2 text-sm font-medium rounded-lg border border-green-600 bg-green-50 text-green-700 hover:bg-green-100 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Accepting...' : 'Accept'}
                   </button>
                   <button
-                    onClick={onDelete}
+                    onClick={() => {
+                      if (!requireAuth()) return
+                      onDelete?.()
+                    }}
                     disabled={loading}
                     className="px-4 py-2 text-sm font-medium rounded-lg border border-red-600 bg-red-50 text-red-700 hover:bg-red-100 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
@@ -193,7 +202,10 @@ export function ProfileHeader({
                 </>
               ) : (
                 <button
-                  onClick={onConnect}
+                  onClick={() => {
+                    if (!requireAuth()) return
+                    onConnect?.()
+                  }}
                   disabled={loading}
                   className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all duration-200 active:scale-95
 

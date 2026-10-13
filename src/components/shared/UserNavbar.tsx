@@ -264,8 +264,10 @@ export const UserNavbar = ({ onMenuClick, children }: UserNavbarProps) => {
 
   // Re-fetch unread count on every route change so the badge is always in sync
   useEffect(() => {
-    dispatch(getUnreadCount())
-  }, [pathname, dispatch])
+    if (isAuthenticated) {
+      dispatch(getUnreadCount())
+    }
+  }, [pathname, dispatch, isAuthenticated])
 
   // ✅ Fix hydration mismatch
   const [mounted, setMounted] = useState(false)
@@ -337,37 +339,53 @@ export const UserNavbar = ({ onMenuClick, children }: UserNavbarProps) => {
           </div>
 
           {/* Right */}
-          <div className="flex items-center gap-4">
-            
-            {/* Notification */}
-            <Link href="/notifications">
-              <button aria-label="Notifications" className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <Bell className="h-6 w-6 text-gray-700" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none shadow-xs">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
-              </button>
-            </Link>
+          <div className="flex items-center gap-3">
+            {mounted && isAuthenticated && user ? (
+              <>
+                {/* Notification */}
+                <Link href="/notifications">
+                  <button aria-label="Notifications" className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <Bell className="h-6 w-6 text-gray-700" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none shadow-xs">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+                </Link>
 
-            {/* ✅ Avatar (hydration safe) */}
-            {mounted && isAuthenticated && user && (
-              <Link href="/profile">
-                {profilePhoto && !avatarLoadFailed ? (
-                  <img
-                    src={profilePhoto || `https://ui-avatars.com/api/name=${encodeURIComponent(initials)}`}
-                    alt={(user as any)?.full_name || user?.username || user?.name || 'User'}
-                    className="h-9 w-9 rounded-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                    onError={() => setAvatarLoadFailed(true)}
-                  />
-                ) : (
-                  <div className="h-9 w-9 rounded-full bg-[#212529] text-white flex items-center justify-center text-sm font-medium cursor-pointer hover:opacity-90 transition-opacity">
-                    {initials}
-                  </div>
-                )}
-              </Link>
-            )}
+                {/* ✅ Avatar (hydration safe) */}
+                <Link href="/profile">
+                  {profilePhoto && !avatarLoadFailed ? (
+                    <img
+                      src={profilePhoto || `https://ui-avatars.com/api/name=${encodeURIComponent(initials)}`}
+                      alt={(user as any)?.full_name || user?.username || user?.name || 'User'}
+                      className="h-9 w-9 rounded-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      onError={() => setAvatarLoadFailed(true)}
+                    />
+                  ) : (
+                    <div className="h-9 w-9 rounded-full bg-[#212529] text-white flex items-center justify-center text-sm font-medium cursor-pointer hover:opacity-90 transition-opacity">
+                      {initials}
+                    </div>
+                  )}
+                </Link>
+              </>
+            ) : mounted && !isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/login"
+                  className="px-3.5 py-1.5 text-xs sm:text-sm font-medium text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition"
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="px-3.5 py-1.5 text-xs sm:text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg transition"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            ) : null}
           </div>
         </div>
       </nav>

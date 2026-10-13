@@ -12,6 +12,7 @@ import {
 import { useFollow } from '@/hooks/useFollow'
 import apiClient from '@/lib/api-client'
 import { useEffect, useState } from 'react'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 // ── Per-request card with connect + message ──────────────────────────────────
 function RequestCard({ req, approveMutation, rejectMutation, router }: {
@@ -20,6 +21,7 @@ function RequestCard({ req, approveMutation, rejectMutation, router }: {
   rejectMutation: any
   router: ReturnType<typeof useRouter>
 }) {
+  const requireAuth = useRequireAuth()
   const userId = req.user?.id || req.userId || ''
   const { state: followState, follow, unfollow } = useFollow(userId)
   const [messaging, setMessaging] = useState(false)
@@ -34,6 +36,7 @@ function RequestCard({ req, approveMutation, rejectMutation, router }: {
     `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=E8E8E8&color=212529&size=96`
 
   const handleMessage = async () => {
+    if (!requireAuth()) return
     if (!userId) return
     try {
       setMessaging(true)
@@ -83,7 +86,10 @@ function RequestCard({ req, approveMutation, rejectMutation, router }: {
         {/* Approve / Reject */}
         <div className="flex gap-2 flex-shrink-0">
           <button
-            onClick={() => rejectMutation.mutate(req.id)}
+            onClick={() => {
+              if (!requireAuth()) return
+              rejectMutation.mutate(req.id)
+            }}
             disabled={isRejecting || isApproving}
             className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium border transition-all active:scale-95 disabled:opacity-50"
             style={{ borderColor: '#DC2626', color: '#DC2626', backgroundColor: 'transparent' }}
@@ -95,7 +101,10 @@ function RequestCard({ req, approveMutation, rejectMutation, router }: {
           </button>
 
           <button
-            onClick={() => approveMutation.mutate(req.id)}
+            onClick={() => {
+              if (!requireAuth()) return
+              approveMutation.mutate(req.id)
+            }}
             disabled={isApproving || isRejecting}
             className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium border transition-all active:scale-95 disabled:opacity-50"
             style={{ borderColor: '#212529', color: '#212529', backgroundColor: 'transparent' }}
@@ -111,7 +120,11 @@ function RequestCard({ req, approveMutation, rejectMutation, router }: {
       {/* Bottom row: Connect + Message */}
       <div className="flex gap-2 mt-4 pt-4" style={{ borderTop: '1px solid #F0F0F0' }}>
         <button
-          onClick={followState === 'connected' ? unfollow : follow}
+          onClick={() => {
+            if (!requireAuth()) return
+            if (followState === 'connected') unfollow()
+            else follow()
+          }}
           className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-all active:scale-95 flex-1 justify-center"
           style={{ borderColor: '#212529', color: '#212529', backgroundColor: 'transparent' }}
           onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#212529'; e.currentTarget.style.color = '#FFFFFF' }}

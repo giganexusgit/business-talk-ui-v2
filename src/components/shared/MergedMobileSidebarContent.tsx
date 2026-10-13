@@ -11,6 +11,7 @@ import { selectTotalUnreadCount } from '@/redux/selectors/chatSelectors'
 import { selectNotificationUnreadCount } from '@/redux/selectors/notificationSelectors'
 import { FileCheck, Info, LogOut, MessageSquare, Shield, Users } from 'lucide-react'
 import Link from 'next/link'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 interface Props {
   people: any[]
@@ -38,6 +39,7 @@ export const MergedMobileSidebarContent = ({
   const pathname = usePathname()
   const { dispatch } = useAuth()
   const router = useRouter()
+  const requireAuth = useRequireAuth()
 
   const unreadMessages = useSelector(selectTotalUnreadCount)
   const unreadNotifications = useSelector(selectNotificationUnreadCount)
@@ -136,6 +138,12 @@ export const MergedMobileSidebarContent = ({
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={(e) => {
+                      const isProtected = ['/profile', '/messages', '/drafts', '/notifications', '/settings'].includes(item.href)
+                      if (isProtected && !requireAuth()) {
+                        e.preventDefault()
+                      }
+                    }}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-lg"
                     style={{
                       backgroundColor: isActive ? '#F8F9FA' : 'transparent',

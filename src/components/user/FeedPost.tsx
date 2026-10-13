@@ -891,7 +891,10 @@ export function FeedPost({ id: propId, authorId = '', author, groupId, group, co
           </button>
 
           <button
-            onClick={() => setShowComments(!showComments)}
+            onClick={() => {
+              if (!requireAuth()) return
+              setShowComments(!showComments)
+            }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-all cursor-pointer"
           >
             <MessageCircle className="w-5 h-5" />
@@ -899,7 +902,10 @@ export function FeedPost({ id: propId, authorId = '', author, groupId, group, co
           </button>
 
           <button
-            onClick={() => setShowShareModal(true)}
+            onClick={() => {
+              if (!requireAuth()) return
+              setShowShareModal(true)
+            }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-all ml-auto cursor-pointer"
           >
             <Send className="w-5 h-5" />
@@ -924,6 +930,11 @@ export function FeedPost({ id: propId, authorId = '', author, groupId, group, co
                   disabled={isBanned}
                   value={commentInput}
                   onChange={(e) => setCommentInput(e.target.value)}
+                  onFocus={() => {
+                    if (!requireAuth()) {
+                      ;(document.activeElement as HTMLElement)?.blur()
+                    }
+                  }}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
                   className="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-black disabled:bg-gray-50 disabled:cursor-not-allowed"
                 />

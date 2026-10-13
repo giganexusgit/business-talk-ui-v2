@@ -6,9 +6,11 @@ import { useQueryClient } from '@tanstack/react-query'
 import { TagsPopup } from '@/components/shared/TagsPopup'
 import apiClient from '@/lib/api-client'
 import { useAccountStatus } from '@/hooks/useRedux'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 // import BasicEditor from '../editor/BasicEditor'
 
 export function PostQuestionBox() {
+  const requireAuth = useRequireAuth()
   const { isBanned } = useAccountStatus()
   const [questionText, setQuestionText] = useState('')
   const [tags, setTags] = useState<string[]>([])
@@ -30,6 +32,7 @@ export function PostQuestionBox() {
   const [showMediaWarning, setShowMediaWarning] = useState(false)
 
   const handleSaveDraft = async () => {
+    if (!requireAuth()) return
     if (!questionText.trim()) return
     try {
       setSavingDraft(true)
@@ -50,6 +53,7 @@ export function PostQuestionBox() {
   }
 
   const handlePostQuestion = async () => {
+    if (!requireAuth()) return
     if (!questionText.trim()) return
 
     try {
@@ -90,6 +94,11 @@ export function PostQuestionBox() {
         value={questionText}
         placeholder={isBanned ? 'Your account is restricted' : 'What would you like to know from the community?'}
         onChange={(e) => setQuestionText(e.target.value)}
+        onFocus={() => {
+          if (!requireAuth()) {
+            ;(document.activeElement as HTMLElement)?.blur()
+          }
+        }}
         onPaste={(e) => {
           if (e.clipboardData.files && e.clipboardData.files.length > 0) {
             e.preventDefault()
@@ -116,7 +125,14 @@ export function PostQuestionBox() {
       */}
 
       <div className="flex flex-col sm:flex-row sm:justify-between gap-3 mt-3">
-        <button type="button" onClick={() => setShowTagsPopup(true)} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all">
+        <button
+          type="button"
+          onClick={() => {
+            if (!requireAuth()) return
+            setShowTagsPopup(true)
+          }}
+          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+        >
           <Tag className="w-4 h-4" />
           Add Tags ({tags.length})
         </button>

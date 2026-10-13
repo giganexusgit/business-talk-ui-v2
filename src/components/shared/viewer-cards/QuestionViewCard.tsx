@@ -9,6 +9,7 @@ import { useAccountStatus } from '@/hooks/useRedux'
 import { getTimeAgo } from '@/lib/utils'
 import ExpandableText from '@/components/common/ExpandableText'
 import { HashtagList } from '@/lib/hashtag'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 interface Props {
   data: ContentData
@@ -27,6 +28,7 @@ interface Answer {
 }
 
 export function QuestionViewCard({ data }: Props) {
+  const requireAuth = useRequireAuth()
   const postId = data.id
 
   const [isLiked, setIsLiked] = useState(Boolean(data.liked ?? data.myVote === 'up'))
@@ -103,6 +105,7 @@ export function QuestionViewCard({ data }: Props) {
   // ❓ LIKE QUESTION
   // =========================
   const handleLikeQuestion = async () => {
+    if (!requireAuth()) return
     if (isBanned) return
     const wasLiked = isLiked
     setIsLiked(!wasLiked)
@@ -123,6 +126,7 @@ export function QuestionViewCard({ data }: Props) {
   // ➕ POST ANSWER
   // =========================
   const handlePostAnswer = async () => {
+    if (!requireAuth()) return
     if (!answerInput.trim() || isBanned) return
     try {
       await apiClient.addPostComment(postId, answerInput)
@@ -138,6 +142,7 @@ export function QuestionViewCard({ data }: Props) {
   // 💬 REPLY
   // =========================
   const handleAddReply = async (answerId: string, parentReplyId?: string) => {
+    if (!requireAuth()) return
     if (!replyInput.trim() || isBanned) return
     try {
       await apiClient.addPostComment(postId, replyInput, parentReplyId || answerId)
@@ -159,6 +164,7 @@ export function QuestionViewCard({ data }: Props) {
     )
 
   const handleVoteAnswer = async (answerId: string, vote: 'up' | 'down') => {
+    if (!requireAuth()) return
     if (isBanned) return
     if (vote === 'up') {
       setAnimatingId(answerId)
@@ -189,6 +195,7 @@ export function QuestionViewCard({ data }: Props) {
     list.filter((a) => String(a.id) !== targetId).map((a) => ({ ...a, replies: removeAnswerRecursive(a.replies || [], targetId) }))
 
   const handleDeleteAnswer = async (answerId: string) => {
+    if (!requireAuth()) return
     try {
       await apiClient.deletePostComment(answerId)
       setAnswersList((prev) => removeAnswerRecursive(prev, String(answerId)))
@@ -229,7 +236,16 @@ export function QuestionViewCard({ data }: Props) {
                     <ThumbsDown className={`w-3.5 h-3.5 transition-all duration-200 ${dislikeAnimatingId === reply.id ? 'scale-150 -rotate-12' : ''}`} />
                     {reply.dislikes}
                   </button>
-                  <button onClick={() => setReplyingTo(reply.id)} disabled={isBanned} className="disabled:opacity-50">Reply</button>
+                  <button
+                    onClick={() => {
+                      if (!requireAuth()) return
+                      setReplyingTo(reply.id)
+                    }}
+                    disabled={isBanned}
+                    className="disabled:opacity-50"
+                  >
+                    Reply
+                  </button>
                   {currentUserId && currentUserId === reply.authorId && (
                     <button onClick={() => handleDeleteAnswer(reply.id)} className="text-red-500 hover:text-red-700 flex items-center gap-1">
                       <Trash2 className="w-3 h-3" />
@@ -321,7 +337,13 @@ export function QuestionViewCard({ data }: Props) {
           <Eye className="w-4 h-4" /> {data.views || 0}
         </span>
 
-        <button onClick={() => setShowShareModal(true)} className="ml-auto flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-gray-50 transition">
+        <button
+          onClick={() => {
+            if (!requireAuth()) return
+            setShowShareModal(true)
+          }}
+          className="ml-auto flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-gray-50 transition"
+        >
           <Send className="w-4 h-4" />
         </button>
       </div>
@@ -329,7 +351,10 @@ export function QuestionViewCard({ data }: Props) {
       {/* ANSWER INPUT */}
       {!showAnswerBox ? (
         <button
-          onClick={() => setShowAnswerBox(true)}
+          onClick={() => {
+            if (!requireAuth()) return
+            setShowAnswerBox(true)
+          }}
           disabled={isBanned}
           className="w-full border rounded-full py-2.5 flex items-center gap-2 justify-center text-sm text-gray-500 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -339,6 +364,7 @@ export function QuestionViewCard({ data }: Props) {
         <div className="space-y-2">
           <textarea
             value={answerInput}
+            onFocus={() => { if (!requireAuth()) return }}
             onChange={(e) => setAnswerInput(e.target.value)}
             disabled={isBanned}
             rows={3}
@@ -401,7 +427,14 @@ export function QuestionViewCard({ data }: Props) {
                   Disagree ({answer.dislikes})
                 </button>
 
-                <button onClick={() => setReplyingTo(replyingTo === answer.id ? null : answer.id)} disabled={isBanned} className="disabled:opacity-50 hover:text-gray-700 transition">
+                <button
+                  onClick={() => {
+                    if (!requireAuth()) return
+                    setReplyingTo(replyingTo === answer.id ? null : answer.id)
+                  }}
+                  disabled={isBanned}
+                  className="disabled:opacity-50 hover:text-gray-700 transition"
+                >
                   Reply
                 </button>
 

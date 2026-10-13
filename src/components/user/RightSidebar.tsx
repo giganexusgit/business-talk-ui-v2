@@ -88,6 +88,7 @@ export function UserCard({
   person: any
   onProfileClick: (person: any) => void
 }) {
+  const requireAuth = useRequireAuth()
   const {
     state: followState,
     loading: followLoading,
@@ -100,6 +101,7 @@ export function UserCard({
   const handleAction = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    if (!requireAuth()) return
     if (followLoading) return
 
     if (followState === 'connect') {
@@ -297,39 +299,61 @@ export function RightSidebar() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [peopleRes, groupsRes, storiesRes, hotRes] = await Promise.all([
-          apiClient.getFollowSuggestions(),
-          apiClient.getGroupSuggestions(5),
+        const isGuest =
+          typeof window !== 'undefined' &&
+          !localStorage.getItem('user');
+
+        let peopleData: any[] = [];
+        let groupsData: SuggestedGroup[] = [];
+
+        const publicRequests = [
           apiClient.getTrendingStories(),
           apiClient.getTrendingPosts(),
-        ]);
-        setPeople((peopleRes.data || []).slice(0, 5));
+        ];
 
-        const formattedGroups: SuggestedGroup[] = (groupsRes.data || []).map((g: any) => ({
-          id: g.id,
-          name: g.name,
-          description: g.description,
-          image: g.cover_image || '/placeholder.jpg',
-          members: g.memberCount || 0,
-          visibility: 'PUBLIC',
-          requiresApproval: Boolean(g.requiresApproval),
-          category: 'General',
-          joined: false,
-          hasPendingRequest: Boolean(g.hasPendingRequest),
-        }));
+        let storiesRes: any;
+        let hotRes: any;
 
-        setGroups(formattedGroups.slice(0, 5));
-        const sortedStories = (storiesRes.data || []).sort(
+        if (isGuest) {
+          const [sRes, hRes] = await Promise.all(publicRequests);
+          storiesRes = sRes;
+          hotRes = hRes;
+        } else {
+          const [peopleRes, groupsRes, sRes, hRes] = await Promise.all([
+            apiClient.getFollowSuggestions(),
+            apiClient.getGroupSuggestions(5),
+            ...publicRequests,
+          ]);
+          storiesRes = sRes;
+          hotRes = hRes;
+          peopleData = (peopleRes.data || []).slice(0, 5);
+          groupsData = (groupsRes.data || []).map((g: any) => ({
+            id: g.id,
+            name: g.name,
+            description: g.description,
+            image: g.cover_image || '/placeholder.jpg',
+            members: g.memberCount || 0,
+            visibility: 'PUBLIC',
+            requiresApproval: Boolean(g.requiresApproval),
+            category: 'General',
+            joined: false,
+            hasPendingRequest: Boolean(g.hasPendingRequest),
+          }));
+        }
+
+        setPeople(peopleData);
+        setGroups(groupsData);
+        const sortedStories = (storiesRes?.data || []).sort(
           (a: any, b: any) => new Date(b.created_on).getTime() - new Date(a.created_on).getTime()
         );
         setStories(sortedStories.slice(0, 5));
-        const hotPosts = hotRes.data || [];
+        const hotPosts = hotRes?.data || [];
         const questionPosts = hotPosts
           .filter((p: any) => (p.post_type || p.type)?.toUpperCase() === 'QUESTION')
           .sort((a: any, b: any) => (b.hot_score || 0) - (a.hot_score || 0));
         setQuestions(questionPosts.slice(0, 5));
         setJoinStates(
-          formattedGroups.reduce((acc: any, g: SuggestedGroup) => {
+          groupsData.reduce((acc: any, g: SuggestedGroup) => {
             acc[g.id] = g.hasPendingRequest ? 'requested' : 'join';
             return acc;
           }, {})
@@ -506,7 +530,10 @@ export function RightSidebar() {
               <span className="text-xs text-gray-500 mb-3">Publish your own story and see if your content comes up here!</span>
               <button
                 className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-[#212529] text-white hover:bg-[#3D3D3D] transition-all duration-200"
-                onClick={() => router.push('/?tab=stories&compose=1')}
+                onClick={() => {
+                  if (!requireAuth()) return
+                  router.push('/?tab=stories&compose=1')
+                }}
               >
                 Share a Story
               </button>

@@ -11,6 +11,12 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      // Direct root visitors to dashboard feed instead of login page
+      {
+        source: '/',
+        destination: '/dashboard',
+        permanent: false,
+      },
       // Backend reset-password email links arrive as /auth/reset-password?token=...
       // Redirect them to our frontend reset-password page (preserves query string)
       {

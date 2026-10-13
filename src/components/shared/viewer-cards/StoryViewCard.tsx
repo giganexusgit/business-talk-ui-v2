@@ -9,12 +9,14 @@ import { useStoryComments } from '@/hooks/useStoryComments'
 import { useAccountStatus } from '@/hooks/useRedux'
 import { getTimeAgo } from '@/lib/utils'
 import ExpandableText from '@/components/common/ExpandableText'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 interface Props {
   data: ContentData
 }
 
 export function StoryViewCard({ data }: Props) {
+  const requireAuth = useRequireAuth()
   const storyId = data.id
 
   const [isLiked, setIsLiked] = useState(Boolean(data.liked))
@@ -88,6 +90,7 @@ export function StoryViewCard({ data }: Props) {
   // ❤️ LIKE STORY
   // =========================
   const handleLike = async () => {
+    if (!requireAuth()) return
     if (isLiking) return
     const wasLiked = isLiked
     setIsLiked(!wasLiked)
@@ -110,12 +113,14 @@ export function StoryViewCard({ data }: Props) {
   // 💬 COMMENT
   // =========================
   const handleAddComment = () => {
+    if (!requireAuth()) return
     if (!commentInput.trim() || isBanned) return
     addComment({ content: commentInput })
     setCommentInput('')
   }
 
   const handleAddReply = (parentId: string) => {
+    if (!requireAuth()) return
     if (!replyInput.trim() || isBanned) return
     addComment({ content: replyInput, parent_id: parentId })
     setReplyInput('')
@@ -126,6 +131,7 @@ export function StoryViewCard({ data }: Props) {
   // 👍 LIKE COMMENT
   // =========================
   const handleLikeComment = async (commentId: string, currentLikes: number) => {
+    if (!requireAuth()) return
     if (isLikingComment) return
     const prev = commentLikeOverrides[commentId]
     const base = prev?.count ?? currentLikes
@@ -182,7 +188,14 @@ export function StoryViewCard({ data }: Props) {
                     <ThumbsUp className={`w-3.5 h-3.5 transition-all duration-200 ${animatingId === reply.id ? 'scale-150 rotate-12' : ''}`} />
                     {commentLikeOverrides[reply.id]?.count ?? reply.likes}
                   </button>
-                  <button onClick={() => setReplyingTo(reply.id)} disabled={isBanned} className="disabled:opacity-50">
+                  <button
+                    onClick={() => {
+                      if (!requireAuth()) return
+                      setReplyingTo(reply.id)
+                    }}
+                    disabled={isBanned}
+                    className="disabled:opacity-50"
+                  >
                     Reply
                   </button>
                   {currentUserId && currentUserId === reply.authorId && (
@@ -274,14 +287,20 @@ export function StoryViewCard({ data }: Props) {
         </span>
 
         <button
-          onClick={() => setShowComments(!showComments)}
+          onClick={() => {
+            if (!requireAuth()) return
+            setShowComments(!showComments)
+          }}
           className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-gray-50 transition"
         >
           <MessageCircle className="w-4 h-4" /> {nestedComments.length}
         </button>
 
         <button
-          onClick={() => setShowShareModal(true)}
+          onClick={() => {
+            if (!requireAuth()) return
+            setShowShareModal(true)
+          }}
           className="ml-auto flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-gray-50 transition"
         >
           <Send className="w-4 h-4" />
@@ -295,6 +314,7 @@ export function StoryViewCard({ data }: Props) {
           <div className="flex gap-2">
             <input
               value={commentInput}
+              onFocus={() => { if (!requireAuth()) return }}
               onChange={(e) => setCommentInput(e.target.value)}
               disabled={isBanned}
               placeholder={isBanned ? 'Your account is restricted' : 'Add a comment…'}
@@ -334,7 +354,14 @@ export function StoryViewCard({ data }: Props) {
                       <ThumbsUp className={`w-3.5 h-3.5 transition-all duration-200 ${animatingId === c.id ? 'scale-150 rotate-12' : ''}`} />
                       {commentLikeOverrides[c.id]?.count ?? c.likes}
                     </button>
-                    <button onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)} disabled={isBanned} className="disabled:opacity-50">
+                    <button
+                      onClick={() => {
+                        if (!requireAuth()) return
+                        setReplyingTo(replyingTo === c.id ? null : c.id)
+                      }}
+                      disabled={isBanned}
+                      className="disabled:opacity-50"
+                    >
                       Reply
                     </button>
                     {currentUserId && currentUserId === c.authorId && (

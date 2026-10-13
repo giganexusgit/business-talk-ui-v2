@@ -25,6 +25,7 @@ import { selectTotalUnreadCount } from '@/redux/selectors/chatSelectors'
 import { selectNotificationUnreadCount } from '@/redux/selectors/notificationSelectors'
 import { fetchUnreadCount } from '@/redux/slices/notificationsSlice'
 import { fetchConversations } from '@/redux/slices/chatSlice'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 // Data-driven sidebar sections for reuse
 export const userSidebarSections = [
@@ -58,6 +59,7 @@ export const UserSidebar = () => {
   const pathname = usePathname()
   const { dispatch, isAuthenticated } = useAuth()
   const router = useRouter()
+  const requireAuth = useRequireAuth()
 
   const unreadMessages = useSelector(selectTotalUnreadCount)
   const unreadNotifications = useSelector(selectNotificationUnreadCount)
@@ -102,6 +104,7 @@ export const UserSidebar = () => {
               {section.items.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
+                const isProtected = ['/profile', '/messages', '/drafts', '/notifications', '/settings'].includes(item.href)
                 
                 let count = 0
                 if (item.href === '/messages') count = unreadMessages
@@ -111,6 +114,11 @@ export const UserSidebar = () => {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={(e) => {
+                      if (isProtected && !requireAuth()) {
+                        e.preventDefault()
+                      }
+                    }}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all group"
                     style={{
                       backgroundColor: isActive ? '#F8F9FA' : 'transparent',

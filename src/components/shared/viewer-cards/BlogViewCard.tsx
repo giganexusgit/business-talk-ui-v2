@@ -7,12 +7,14 @@ import { useState } from 'react'
 import { ShareModal } from '@/components/shared/ShareModal'
 import { ContentData } from '@/hooks/useContentViewer'
 import { HashtagList } from '@/lib/hashtag'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 interface BlogViewCardProps {
   data: ContentData
 }
 
 export function BlogViewCard({ data }: BlogViewCardProps) {
+  const requireAuth = useRequireAuth()
 
   // State for like, comments, reply, etc.
   const [liked, setLiked] = useState(false);
@@ -58,7 +60,10 @@ export function BlogViewCard({ data }: BlogViewCardProps) {
                       <span>{nestedReply.likes}</span>
                     </button>
                     <button
-                      onClick={() => setReplyingTo(replyingTo === `reply-${nestedReply.id}` ? null : `reply-${nestedReply.id}`)}
+                      onClick={() => {
+                        if (!requireAuth()) return;
+                        setReplyingTo(replyingTo === `reply-${nestedReply.id}` ? null : `reply-${nestedReply.id}`);
+                      }}
                       className="hover:opacity-70 transition-all"
                     >
                       Reply
@@ -104,6 +109,7 @@ export function BlogViewCard({ data }: BlogViewCardProps) {
 
   // Like/Unlike a comment or reply at any depth using unique path
   const handleLikeComment = (commentId: number, parentId?: number, replyPath?: string) => {
+    if (!requireAuth()) return;
     const itemId = replyPath || (parentId ? `${parentId}-reply-${commentId}` : `comment-${commentId}`);
     const isLiked = likedComments.has(itemId);
     const newLikedComments = new Set(likedComments);
@@ -183,6 +189,7 @@ export function BlogViewCard({ data }: BlogViewCardProps) {
   };
 
   const handleLike = () => {
+    if (!requireAuth()) return;
     if (liked) {
       setLiked(false);
       setLikeCount(likeCount - 1);
@@ -193,6 +200,7 @@ export function BlogViewCard({ data }: BlogViewCardProps) {
   };
 
   const handleAddComment = () => {
+    if (!requireAuth()) return;
     if (commentInput.trim()) {
       const newComment = {
         id: Math.max(...commentsList.map((c: any) => c.id), 0) + 1,
@@ -219,6 +227,7 @@ export function BlogViewCard({ data }: BlogViewCardProps) {
   };
 
   const handleAddReply = (commentId: number, parentReplyId?: number) => {
+    if (!requireAuth()) return;
     if (replyInput.trim()) {
       const allIds = getAllReplyIds(commentsList);
       const newId = (allIds.length > 0 ? Math.max(...allIds) : 0) + 1;
@@ -272,6 +281,7 @@ export function BlogViewCard({ data }: BlogViewCardProps) {
   };
 
   const handleShare = () => {
+    if (!requireAuth()) return;
     setShowShareModal(true);
   };
 
@@ -338,7 +348,10 @@ export function BlogViewCard({ data }: BlogViewCardProps) {
           <span className="text-sm font-medium">{(data.views || 0).toLocaleString()}</span>
         </button>
         <button
-          onClick={() => setShowComments(!showComments)}
+          onClick={() => {
+            if (!requireAuth()) return;
+            setShowComments(!showComments);
+          }}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
         >
           <MessageCircle className="w-5 h-5" />
@@ -368,6 +381,7 @@ export function BlogViewCard({ data }: BlogViewCardProps) {
                 type="text"
                 placeholder="Add a comment..."
                 value={commentInput}
+                onFocus={() => { if (!requireAuth()) return; }}
                 onChange={(e) => setCommentInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
                 className="flex-1 px-3 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -402,7 +416,13 @@ export function BlogViewCard({ data }: BlogViewCardProps) {
                         style={{ color: likedComments.has(`comment-${comment.id}`) ? '#1d9bf0' : '#5F6368' }}>
                         <ThumbsUp className="w-3 h-3" /> {comment.likes}
                       </button>
-                      <button onClick={() => setReplyingTo(replyingTo === `comment-${comment.id}` ? null : `comment-${comment.id}`)} className="hover:text-blue-600">
+                      <button
+                        onClick={() => {
+                          if (!requireAuth()) return;
+                          setReplyingTo(replyingTo === `comment-${comment.id}` ? null : `comment-${comment.id}`);
+                        }}
+                        className="hover:text-blue-600"
+                      >
                         Reply
                       </button>
                     </div>

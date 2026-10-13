@@ -7,6 +7,7 @@ import { ShareModal } from '@/components/shared/ShareModal'
 import apiClient from '@/lib/api-client'
 import { FeedPost } from '@/components/user/FeedPost'
 import { profileHref } from '@/lib/profile-link'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 interface GroupMember {
   id: string
@@ -171,6 +172,7 @@ export default function GroupDetailsPage() {
   const router = useRouter()
   const params = useParams()
   const groupId = params.id as string
+  const requireAuth = useRequireAuth()
 
   const [group, setGroup] = useState<Group | null>(null)
   const [loading, setLoading] = useState(true)
@@ -361,6 +363,7 @@ export default function GroupDetailsPage() {
   }
 
   const handleJoin = async () => {
+    if (!requireAuth()) return
     if (!group) return
 
     try {
@@ -390,6 +393,7 @@ export default function GroupDetailsPage() {
   const isGroupOwner = Boolean(group && currentUserId && (group.ownerId === currentUserId || group.membersList.some((m: any) => m.id === currentUserId && String(m.title || '').toUpperCase() === 'OWNER')))
 
   const handleCreateGroupPost = async () => {
+    if (!requireAuth()) return
     if (!group || (!postContent.trim() && mediaFiles.length === 0)) return
 
     try {
@@ -451,7 +455,9 @@ export default function GroupDetailsPage() {
     })
   }
 
-  const handleOpenGroupMessage = async () => {    if (!group || openingChat) return
+  const handleOpenGroupMessage = async () => {
+    if (!requireAuth()) return
+    if (!group || openingChat) return
 
     try {
       setOpeningChat(true)
@@ -546,6 +552,7 @@ export default function GroupDetailsPage() {
   }
 
   const handleGenerateInvite = async () => {
+    if (!requireAuth()) return
     if (!group) return
 
     try {

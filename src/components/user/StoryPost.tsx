@@ -541,12 +541,12 @@ export function StoryPost({
             </div>
           </div>
           <div ref={actionMenuRef} className="relative">
-            <button onClick={() => setShowActionMenu(!showActionMenu)}>
-              <MoreVertical />
+            <button onClick={() => setShowActionMenu(!showActionMenu)} className="text-gray-400 hover:text-gray-600 p-1 transition">
+              <MoreVertical className="w-5 h-5" />
             </button>
 
             {showActionMenu && (
-              <div className="absolute right-0 bg-white border rounded shadow p-2 flex gap-1">
+              <div className="absolute right-0 mt-1 bg-white border rounded-lg shadow-lg z-10 px-3 py-2 flex items-center gap-1 whitespace-nowrap">
                 <button
                   onClick={handleSave}
                   className="group p-2 rounded transition-all duration-200 flex items-center gap-1 text-xs hover:bg-gray-100 hover:gap-2"

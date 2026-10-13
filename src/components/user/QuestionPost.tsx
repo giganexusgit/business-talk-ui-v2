@@ -693,7 +693,7 @@ export function QuestionPost({
             </button>
 
             {showActionMenu && (
-              <div className="absolute right-0 bg-white border rounded shadow p-2 row-gap-2 flex flex-col text-sm z-10">
+              <div className="absolute right-0 mt-1 bg-white border rounded-lg shadow-lg z-10 px-3 py-2 flex items-center gap-1 whitespace-nowrap">
                 <button
                   onClick={handleSave}
                   className="group p-2 rounded transition-all duration-200 flex items-center gap-1 text-xs hover:bg-gray-100 hover:gap-2"

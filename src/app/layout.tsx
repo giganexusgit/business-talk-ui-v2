@@ -3,6 +3,7 @@ import '@/app/globals.css'
 import { Providers } from '@/app/providers'
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://businesstalk24.com'),
   title: 'Businesstalk24 - Professional Networking Platform',
   description: 'Connect, collaborate, and grow your business with Businesstalk24',
   keywords: 'networking, business, professional, collaboration',

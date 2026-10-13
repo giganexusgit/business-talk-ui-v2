@@ -8,9 +8,12 @@ export const metadata: Metadata = {
   keywords: 'networking, business, professional, collaboration',
   authors: [{ name: 'Businesstalk24' }],
   icons: {
-    icon: '/assets/icons/BUSINESSTALK24_LOGO_Icon_png.png',
-    shortcut: '/assets/icons/BUSINESSTALK24_LOGO_Icon_png.png',
-    apple: '/assets/icons/BUSINESSTALK24_LOGO_Icon_png.png',
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/assets/icons/BUSINESSTALK24_LOGO_Icon_png.png', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
   },
   openGraph: {
     type: 'website',

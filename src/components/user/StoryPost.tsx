@@ -164,6 +164,7 @@ export function StoryPost({
     }
   }
   const reduxUser = useAppSelector((state: any) => state.auth.user)
+  const isOwnStory = Boolean((currentUserId || reduxUser?.id) && authorId && String(currentUserId || reduxUser?.id) === String(authorId))
 
   // ✅ HOOKS (STANDARDIZED)
   const { comments, addComment, likeComment, isLikingComment, deleteComment } = useStoryComments(id)
@@ -564,52 +565,56 @@ export function StoryPost({
                     {isSaved ? 'Unsave' : 'Save'}
                   </span>
                 </button>
-                <button
-                  onClick={followState === 'connected' ? unfollow : follow}
-                  disabled={isBanned}
-                  className="group p-2 rounded transition flex items-center gap-1 text-xs hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ color: '#374151' }}
-                  title={
-                    followState === 'connected'
-                      ? 'Disconnect'
-                      : followState === 'pending'
-                      ? 'Requested'
-                      : 'Connect'
-                  }
-                >
-                  {/* Icon based on state */}
-                  {followState === 'connected' ? (
-                    <UserCheck className="w-4 h-4" />
-                  ) : followState === 'pending' ? (
-                    <UserMinus className="w-4 h-4" />
-                  ) : (
-                    <UserPlus className="w-4 h-4" />
-                  )}
+                {!isOwnStory && (
+                  <>
+                    <button
+                      onClick={followState === 'connected' ? unfollow : follow}
+                      disabled={isBanned}
+                      className="group p-2 rounded transition flex items-center gap-1 text-xs hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ color: '#374151' }}
+                      title={
+                        followState === 'connected'
+                          ? 'Disconnect'
+                          : followState === 'pending'
+                          ? 'Requested'
+                          : 'Connect'
+                      }
+                    >
+                      {/* Icon based on state */}
+                      {followState === 'connected' ? (
+                        <UserCheck className="w-4 h-4" />
+                      ) : followState === 'pending' ? (
+                        <UserMinus className="w-4 h-4" />
+                      ) : (
+                        <UserPlus className="w-4 h-4" />
+                      )}
 
-                  {/* Text appears only on hover */}
-                  <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
-                    {followState === 'connected'
-                      ? 'Disconnect'
-                      : followState === 'pending'
-                      ? 'Requested'
-                      : 'Connect'}
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowReportModal(true)
-                    setShowActionMenu(false)
-                  }}
-                  title='Report'
-                  className="group flex items-center gap-1 text-red-600 hover:bg-gray-100 px-2 py-1 rounded transition-all duration-200 hover:gap-2"
-                >
-                  <Flag className="w-4 h-4" />
+                      {/* Text appears only on hover */}
+                      <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
+                        {followState === 'connected'
+                          ? 'Disconnect'
+                          : followState === 'pending'
+                          ? 'Requested'
+                          : 'Connect'}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowReportModal(true)
+                        setShowActionMenu(false)
+                      }}
+                      title='Report'
+                      className="group flex items-center gap-1 text-red-600 hover:bg-gray-100 px-2 py-1 rounded transition-all duration-200 hover:gap-2"
+                    >
+                      <Flag className="w-4 h-4" />
 
-                  <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
-                    Report
-                  </span>
-                </button>
-                {currentUserId && currentUserId === authorId && (
+                      <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
+                        Report
+                      </span>
+                    </button>
+                  </>
+                )}
+                {isOwnStory && (
                   <>
                     <button
                       onClick={() => {

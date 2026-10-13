@@ -55,6 +55,8 @@ export function FeedPost({ id: propId, authorId = '', author, groupId, group, co
 
   const reduxUser = useAppSelector((state: any) => state.auth.user)
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar: string }>({ id: '', name: 'You', avatar: '' })
+  const currentUserId = String(reduxUser?.id || reduxUser?._id || currentUser.id || '')
+  const isOwnPost = Boolean(currentUserId && authorId && currentUserId === String(authorId))
 
   const [isLiked, setIsLiked] = useState(liked)
   const [likeCount, setLikeCount] = useState(likes)
@@ -768,51 +770,55 @@ export function FeedPost({ id: propId, authorId = '', author, groupId, group, co
                     {isSaved ? 'Unsave' : 'Save'}
                   </span>
                 </button>
-                <button
-                  onClick={followState === 'connected' ? unfollow : follow}
-                  disabled={isBanned}
-                  className="group p-2 rounded transition flex items-center gap-1 text-xs hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ color: '#374151' }}
-                  title={
-                    followState === 'connected'
-                      ? 'Disconnect'
-                      : followState === 'pending'
-                      ? 'Requested'
-                      : 'Connect'
-                  }
-                >
-                  {/* Icon based on state */}
-                  {followState === 'connected' ? (
-                    <UserCheck className="w-4 h-4" />
-                  ) : followState === 'pending' ? (
-                    <UserMinus className="w-4 h-4" />
-                  ) : (
-                    <UserPlus className="w-4 h-4" />
-                  )}
+                {!isOwnPost && (
+                  <>
+                    <button
+                      onClick={followState === 'connected' ? unfollow : follow}
+                      disabled={isBanned}
+                      className="group p-2 rounded transition flex items-center gap-1 text-xs hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ color: '#374151' }}
+                      title={
+                        followState === 'connected'
+                          ? 'Disconnect'
+                          : followState === 'pending'
+                          ? 'Requested'
+                          : 'Connect'
+                      }
+                    >
+                      {/* Icon based on state */}
+                      {followState === 'connected' ? (
+                        <UserCheck className="w-4 h-4" />
+                      ) : followState === 'pending' ? (
+                        <UserMinus className="w-4 h-4" />
+                      ) : (
+                        <UserPlus className="w-4 h-4" />
+                      )}
 
-                  {/* Text appears only on hover */}
-                  <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
-                    {followState === 'connected'
-                      ? 'Disconnect'
-                      : followState === 'pending'
-                      ? 'Requested'
-                      : 'Connect'}
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowReportModal(true)
-                    setShowActionMenu(false)
-                  }}
-                  title='Report'
-                  className="group flex items-center gap-1 text-red-600 hover:bg-gray-100 px-2 py-1 rounded transition-all duration-200 hover:gap-2"
-                >
-                <Flag className="w-4 h-4" />
-                <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
-                  Report
-                </span>
-                </button>
-                {currentUser.id && currentUser.id === authorId && (
+                      {/* Text appears only on hover */}
+                      <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
+                        {followState === 'connected'
+                          ? 'Disconnect'
+                          : followState === 'pending'
+                          ? 'Requested'
+                          : 'Connect'}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowReportModal(true)
+                        setShowActionMenu(false)
+                      }}
+                      title='Report'
+                      className="group flex items-center gap-1 text-red-600 hover:bg-gray-100 px-2 py-1 rounded transition-all duration-200 hover:gap-2"
+                    >
+                      <Flag className="w-4 h-4" />
+                      <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
+                        Report
+                      </span>
+                    </button>
+                  </>
+                )}
+                {isOwnPost && (
                   <>
                     <button
                       onClick={() => {

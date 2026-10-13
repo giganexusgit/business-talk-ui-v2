@@ -286,9 +286,9 @@ export function QuestionViewCard({ data }: Props) {
       </div>
 
       {/* QUESTION */}
-      <p className="text-gray-900 whitespace-pre-wrap break-words">
+      <div className="text-gray-900 whitespace-pre-wrap break-words">
         <ExpandableText className="text-gray-900 whitespace-pre-wrap break-words" lines={4}>{displayQuestion}</ExpandableText>
-        </p>  {/* text-lg font-semibold  */}
+      </div>  {/* text-lg font-semibold  */}
 
       {/* Tags */}
       {data.tags?.length > 0 && (

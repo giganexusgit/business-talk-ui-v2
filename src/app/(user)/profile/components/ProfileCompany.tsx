@@ -50,84 +50,94 @@ export function ProfileCompany({ profile }: { profile: any }) {
 
           <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-bold text-gray-900 truncate">{companyName}</h2>
-            <div className="flex flex-wrap items-center gap-2 mt-1.5">
-              {businessType && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                  <Layers className="w-3 h-3" />
-                  {businessType}
-                </span>
-              )}
-              {businessCategory && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100">
-                  <Tag className="w-3 h-3" />
-                  {businessCategory}
-                </span>
-              )}
-              {establishedYear && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">
-                  <Calendar className="w-3 h-3" />
-                  Est. {establishedYear}
-                </span>
-              )}
-            </div>
+            {(businessType?.trim() || businessCategory?.trim() || establishedYear) && (
+              <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                {businessType?.trim() && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                    <Layers className="w-3 h-3" />
+                    {businessType.trim()}
+                  </span>
+                )}
+                {businessCategory?.trim() && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100">
+                    <Tag className="w-3 h-3" />
+                    {businessCategory.trim()}
+                  </span>
+                )}
+                {establishedYear && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">
+                    <Calendar className="w-3 h-3" />
+                    Est. {establishedYear}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Contact & Meta Quick Info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 text-sm text-gray-600">
-          {(address || city) && (
-            <div className="flex items-center gap-2 text-gray-600">
-              <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
-              <span className="truncate">
-                {[address, city].filter(Boolean).join(', ')}
-              </span>
+        {(() => {
+          const loc = [address?.trim(), city?.trim()].filter(Boolean).join(', ')
+          const ph = phone?.trim()
+          const web = website?.trim()
+
+          if (!loc && !ph && !web) return null
+
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 text-sm text-gray-600">
+              {loc && (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span className="truncate">{loc}</span>
+                </div>
+              )}
+              {ph && (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                  <a href={`tel:${ph}`} className="hover:text-blue-600 truncate transition-colors">
+                    {ph}
+                  </a>
+                </div>
+              )}
+              {web && (
+                <div className="flex items-center gap-2 text-gray-600 sm:col-span-2">
+                  <Globe className="w-4 h-4 text-gray-400 shrink-0" />
+                  <a
+                    href={web.startsWith('http') ? web : `https://${web}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 hover:underline inline-flex items-center gap-1 truncate"
+                  >
+                    {web.replace(/^https?:\/\//, '')}
+                    <ExternalLink className="w-3 h-3 shrink-0" />
+                  </a>
+                </div>
+              )}
             </div>
-          )}
-          {phone && (
-            <div className="flex items-center gap-2 text-gray-600">
-              <Phone className="w-4 h-4 text-gray-400 shrink-0" />
-              <a href={`tel:${phone}`} className="hover:text-blue-600 truncate transition-colors">
-                {phone}
-              </a>
-            </div>
-          )}
-          {website && (
-            <div className="flex items-center gap-2 text-gray-600 sm:col-span-2">
-              <Globe className="w-4 h-4 text-gray-400 shrink-0" />
-              <a
-                href={website.startsWith('http') ? website : `https://${website}`}
-                target="_blank"
-                rel="noreferrer"
-                className="text-blue-600 hover:underline inline-flex items-center gap-1 truncate"
-              >
-                {website.replace(/^https?:\/\//, '')}
-                <ExternalLink className="w-3 h-3 shrink-0" />
-              </a>
-            </div>
-          )}
-        </div>
+          )
+        })()}
       </div>
 
       {/* About Business */}
-      {about && (
+      {about?.trim() && (
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <Building2 className="w-5 h-5 text-gray-700" />
             About Business
           </h3>
-          <BioText content={about} fallback="No business description provided." />
+          <BioText content={about.trim()} showEmptyFallback={false} />
         </div>
       )}
 
       {/* Products & Services */}
-      {productsServices && (
+      {productsServices?.trim() && (
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <Package className="w-5 h-5 text-gray-700" />
             Products & Services
           </h3>
           <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-            {productsServices}
+            {productsServices.trim()}
           </p>
         </div>
       )}

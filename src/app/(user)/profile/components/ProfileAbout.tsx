@@ -1,31 +1,51 @@
 import BioText from '@/components/common/BioText'
 
 export function ProfileAbout({ profile }: any) {
-  const bioContent = profile?.about || profile?.short_bio || profile?.bio
-  const products = profile?.business_products_services
+  const bioContent = (profile?.about || profile?.short_bio || profile?.bio)?.trim()
+  const products = profile?.business_products_services?.trim()
   const gallery: string[] = Array.isArray(profile?.business_gallery) ? profile.business_gallery : []
-  const website = profile?.business_website
-  const address = profile?.business_address
+  const website = profile?.business_website?.trim()
+  const address = (profile?.business_address || profile?.location)?.trim()
+  const establishedYear = profile?.business_established_year
+
+  const hasAboutDetails = Boolean(bioContent || website || address || establishedYear)
+
+  if (!hasAboutDetails && !products && gallery.length === 0) {
+    return (
+      <div className="bg-white p-6 rounded-2xl border text-sm text-gray-400">
+        No additional profile information provided.
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-6 rounded-2xl border">
-        <h2 className="text-xl font-semibold mb-4">{profile?.isBusiness ? 'About Business' : 'About'}</h2>
-        <BioText content={bioContent} fallback="No bio available" />
-        {(website || address || profile?.business_established_year) && (
-          <div className="mt-4 space-y-1 text-sm text-gray-600">
-            {profile?.business_established_year && (
-              <p>Established {profile.business_established_year}</p>
-            )}
-            {address && <p>{address}</p>}
-            {website && (
-              <a href={website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all">
-                {website.replace(/^https?:\/\//, '')}
-              </a>
-            )}
-          </div>
-        )}
-      </div>
+      {hasAboutDetails && (
+        <div className="bg-white p-6 rounded-2xl border">
+          <h2 className="text-xl font-semibold mb-4">{profile?.isBusiness ? 'About Business' : 'About'}</h2>
+          {bioContent && (
+            <BioText content={bioContent} showEmptyFallback={false} />
+          )}
+          {(website || address || establishedYear) && (
+            <div className={`${bioContent ? 'mt-4' : ''} space-y-1 text-sm text-gray-600`}>
+              {establishedYear && (
+                <p>Established {establishedYear}</p>
+              )}
+              {address && <p>{address}</p>}
+              {website && (
+                <a
+                  href={website.startsWith('http') ? website : `https://${website}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-blue-600 hover:underline break-all inline-block"
+                >
+                  {website.replace(/^https?:\/\//, '')}
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {products && (
         <div className="bg-white p-6 rounded-2xl border">

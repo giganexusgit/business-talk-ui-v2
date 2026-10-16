@@ -157,19 +157,27 @@ export function ProfileHeader({
                 </span>
               )}
             </h1>
-            <p className="text-gray-500 text-sm sm:text-base truncate">{profileData.title}</p>
+            {profileData.title?.trim() && (
+              <p className="text-gray-500 text-sm sm:text-base truncate">{profileData.title.trim()}</p>
+            )}
 
-            <div className="flex flex-wrap gap-3 text-xs sm:text-sm text-gray-400 mt-2">
-              <span className="flex gap-1 items-center">
-                <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                {profileData.location || 'N/A'}
-              </span>
+            {(profileData.location?.trim() || profileData.company?.trim()) && (
+              <div className="flex flex-wrap gap-3 text-xs sm:text-sm text-gray-400 mt-2">
+                {profileData.location?.trim() && (
+                  <span className="flex gap-1 items-center">
+                    <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    {profileData.location.trim()}
+                  </span>
+                )}
 
-              <span className="flex gap-1 items-center">
-                <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                {profileData.company || 'N/A'}
-              </span>
-            </div>
+                {profileData.company?.trim() && (
+                  <span className="flex gap-1 items-center">
+                    <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    {profileData.company.trim()}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* ACTION BUTTONS */}

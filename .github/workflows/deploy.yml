@@ -57,6 +57,12 @@ jobs:
           port: ${{ secrets.HOSTINGER_PORT || 22 }}
           script_stop: true
           script: |
+            # Load environment paths (NVM, Node, PM2)
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            [ -s "$HOME/.bashrc" ] && source "$HOME/.bashrc"
+            export PATH=$PATH:/usr/local/bin:$HOME/.local/bin:$HOME/.npm-global/bin:$(dirname $(which node 2>/dev/null || echo ""))
+
             echo "🚀 Navigating to application directory: ${{ secrets.HOSTINGER_APP_PATH }}"
             cd ${{ secrets.HOSTINGER_APP_PATH }}
 
@@ -71,11 +77,7 @@ jobs:
             npm run build
 
             echo "🔄 Restarting UI via PM2..."
-            if pm2 describe business-talk-ui > /dev/null 2>&1; then
-              pm2 reload ecosystem.config.js --env production
-            else
-              pm2 start ecosystem.config.js --env production
-            fi
+            pm2 startOrReload ecosystem.config.js --env production || pm2 restart ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
 
             pm2 save
             echo "✅ Frontend deployment finished successfully!"

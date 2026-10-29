@@ -1,3 +1,14 @@
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Terms of Service & Platform Rules',
+  description: 'Review the official terms of service, acceptable use policies, and legal guidelines governing your use of the BusinessTalk24 platform.',
+  keywords: 'terms of service, platform rules, terms and conditions, user policy, legal agreement, acceptable use policy, platform compliance',
+  alternates: {
+    canonical: '/terms-of-service',
+  },
+}
+
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/constants'
 
 export default function TermsOfServicePage() {

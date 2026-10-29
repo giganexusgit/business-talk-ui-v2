@@ -1,4 +1,13 @@
-'use client'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy — Data Protection & User Privacy',
+  description: 'Learn how BusinessTalk24 protects your personal data, ensures user privacy, and adheres to global data security standards and compliance protocols.',
+  keywords: 'privacy policy, data protection, user security, cookies policy, personal data compliance, data safety, user confidentiality',
+  alternates: {
+    canonical: '/privacy-policy',
+  },
+}
 
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/constants'
 

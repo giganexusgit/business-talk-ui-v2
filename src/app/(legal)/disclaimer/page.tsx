@@ -1,3 +1,14 @@
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Platform Disclaimer & Advisory Notice',
+  description: 'Read the BusinessTalk24 general disclaimer regarding user-generated content, financial discussions, and professional business opinions.',
+  keywords: 'platform disclaimer, financial advice disclaimer, user generated content disclaimer, legal advisory notice, business liability disclaimer',
+  alternates: {
+    canonical: '/disclaimer',
+  },
+}
+
 export default function DisclaimerPage() {
   return (
     <main className="max-w-3xl mx-auto py-8 px-4">

@@ -84,7 +84,7 @@ export default function LoginPage() {
         if (await isAdmin(roleId)) {
           setPendingRedirect('/admin/dashboard')
         } else {
-          setPendingRedirect('/dashboard')
+          setPendingRedirect('/')
         }
       } else if (login.rejected.match(result)) {
         setError(mapAuthError(result.payload, 'login'))

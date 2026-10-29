@@ -32,7 +32,7 @@ export const userSidebarSections = [
   {
     title: 'Main',
     items: [
-      { label: 'Home', href: '/dashboard', icon: Home },
+      { label: 'Home', href: '/', icon: Home },
       { label: 'My Profile', href: '/profile', icon: User },
       { label: 'Messages', href: '/messages', icon: MessageSquare },
     ],
@@ -81,7 +81,7 @@ export const UserSidebar = () => {
       {/* Logo */}
       <div className="px-6 py-6 border-b" style={{ borderColor: '#E8E8E8' }}>
         <Link
-          href="/dashboard"
+          href="/"
           aria-label="Go to home feed"
           className="inline-block outline-none focus-visible:ring-2 focus-visible:ring-black rounded-md transition-opacity hover:opacity-80 active:opacity-60"
         >

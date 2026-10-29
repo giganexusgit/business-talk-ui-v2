@@ -1,6 +1,6 @@
-// 'use client'
+'use client'
 
-// import { Card } from '@/components/shared/Card'
+// // import { Card } from '@/components/shared/Card'
 
 // export default function AdminNotificationsPage() {
 //   return (
@@ -12,8 +12,6 @@
 //     </div>
 //   )
 // }
-'use client'
-
 import { CheckCheck } from 'lucide-react'
 import { useState, useMemo, useEffect } from 'react'
 import { useWebSocket } from '@/providers/WebSocketProvider'

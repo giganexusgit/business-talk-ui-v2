@@ -1,6 +1,6 @@
-import { useContentViewer } from '@/hooks/useContentViewer'
 'use client'
 
+import { useContentViewer } from '@/hooks/useContentViewer'
 /**
  * UNIVERSAL CONTENT VIEWER - INTEGRATION GUIDE
  * 

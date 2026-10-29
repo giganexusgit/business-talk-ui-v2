@@ -1,3 +1,5 @@
+'use client'
+
 // Mobile Routing Structure for Universal Content Viewer
 // Place these files in your app directory following Next.js 14 conventions
 
@@ -10,8 +12,6 @@
 
 // File: src/app/(user)/post/[id]/page.tsx
 /*
-'use client'
-
 import { useParams } from 'next/navigation'
 import { PostViewCard } from '@/components/shared/viewer-cards/PostViewCard'
 
@@ -42,8 +42,6 @@ export default function PostPage() {
 
 // File: src/app/(user)/blog/[id]/page.tsx
 /*
-'use client'
-
 import { useParams } from 'next/navigation'
 import { BlogViewCard } from '@/components/shared/viewer-cards/BlogViewCard'
 
@@ -77,8 +75,6 @@ export default function BlogPage() {
 
 // File: src/app/(user)/question/[id]/page.tsx
 /*
-'use client'
-
 import { useParams } from 'next/navigation'
 import { QuestionViewCard } from '@/components/shared/viewer-cards/QuestionViewCard'
 
@@ -111,8 +107,6 @@ export default function QuestionPage() {
 
 // File: src/app/(user)/story/[id]/page.tsx
 /*
-'use client'
-
 import { useParams } from 'next/navigation'
 import { StoryViewCard } from '@/components/shared/viewer-cards/StoryViewCard'
 

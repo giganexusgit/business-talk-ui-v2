@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { TrendingUp, Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useContentViewerContext } from '@/providers/ContentViewerProvider'
@@ -552,13 +553,7 @@ export function RightSidebar() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold" style={{ color: '#212529' }}>Suggested for You</h2>
-            <button
-              className="text-xs font-medium transition-colors"
-              style={{ color: '#1A73E8' }}
-              onClick={() => router.push('/people')}
-            >
-              See all
-            </button>
+            <Link href="/people" className="text-xs font-medium transition-colors hover:underline" style={{ color: '#1A73E8' }}>See all</Link>
           </div>
           <div className="space-y-4">
             {people.map(person => (
@@ -579,14 +574,7 @@ export function RightSidebar() {
               <Users className="w-5 h-5" style={{ color: '#212529' }} />
               <h2 className="font-semibold" style={{ color: '#212529' }}>Groups for You</h2>
             </div>
-            <button 
-              className="text-xs font-medium transition-colors"
-              style={{ color: '#1A73E8' }}
-              tabIndex={-1}
-              onClick={() => router.push('/groups')}
-            >
-              See all
-            </button>
+            <Link href="/groups" className="text-xs font-medium transition-colors hover:underline" style={{ color: '#1A73E8' }}>See all</Link>
           </div>
           <div className="space-y-4">
             {groups.map(group => (

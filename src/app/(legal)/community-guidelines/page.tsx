@@ -1,3 +1,14 @@
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Community Guidelines & Member Code of Conduct',
+  description: 'Explore our community standards for respectful, constructive, and spam-free business discussions. Maintaining platform integrity and professional decorum.',
+  keywords: 'community guidelines, code of conduct, platform decorum, spam prevention rules, professional networking standards, member etiquette, content moderation guidelines',
+  alternates: {
+    canonical: '/community-guidelines',
+  },
+}
+
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/constants'
 
 export default function CommunityGuidelinesPage() {

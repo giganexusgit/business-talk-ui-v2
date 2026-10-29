@@ -765,7 +765,7 @@ export default function CompleteProfilePage() {
 
       const result = await dispatch(completeProfile(formData as any))
       if (completeProfile.fulfilled.match(result)) {
-        router.push('/dashboard')
+        router.push('/')
       } else if (completeProfile.rejected.match(result)) {
         let msg = result.payload as any
         if (typeof msg === 'string') {

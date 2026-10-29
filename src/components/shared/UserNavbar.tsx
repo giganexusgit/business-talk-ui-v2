@@ -322,7 +322,7 @@ export const UserNavbar = ({ onMenuClick, children }: UserNavbarProps) => {
 
           {/* Logo for mobile */}
           <div className="lg:hidden flex-shrink-0">
-            <Link href="/dashboard" aria-label="Go to home feed" className="hover:opacity-80 transition-opacity">
+            <Link href="/" aria-label="Go to home feed" className="hover:opacity-80 transition-opacity">
               <img 
                 src="/assets/logos/BUSINESSTALK24_LOGO_png.png" 
                 alt="BusinessTalk24 Logo" 

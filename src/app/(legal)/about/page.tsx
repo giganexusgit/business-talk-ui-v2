@@ -1,3 +1,14 @@
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'About Us — Mission & Founder Vision',
+  description: 'Discover the story behind BusinessTalk24. Learn how we empower entrepreneurs, professionals, and innovators through knowledge sharing and collaborative business discussions.',
+  keywords: 'about businesstalk24, business networking mission, entrepreneur platform story, professional community vision, business knowledge sharing platform, who is businesstalk24',
+  alternates: {
+    canonical: '/about',
+  },
+}
+
 import { UserSidebar } from '@/components/shared/UserSidebar'
 
 export default function AboutPage() {

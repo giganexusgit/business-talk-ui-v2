@@ -11,7 +11,6 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { AuthWallProvider } from '@/providers/AuthWallProvider'
 import apiClient from '@/lib/api-client'
-import Loading from '@/app/loading'
 
 const PUBLIC_AUTH_ROUTES = [
   '/login',
@@ -33,7 +32,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
   )
 
   const [queryClient] = useState(() => new QueryClient())
-  const [sessionChecked, setSessionChecked] = useState(false)
   const [forbiddenToast, setForbiddenToast] = useState(false)
   const [restrictedToast, setRestrictedToast] = useState(false)
   const [appToast, setAppToast] = useState<{ message: string; type?: 'success' | 'error' | 'info' } | null>(null)
@@ -82,17 +80,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
       if (process.env.NODE_ENV === 'development') {
         console.log('[auth] hydration skipped on public auth route', { pathname })
       }
-      setSessionChecked(true)
       return
     }
 
     if (hydrationStartedRef.current) {
-      setSessionChecked(true)
       return
     }
 
     hydrationStartedRef.current = true
-    setSessionChecked(false)
     authHydratingRef.current = true
 
     if (typeof window !== 'undefined') {
@@ -167,22 +162,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       } finally {
         authHydratingRef.current = false
         apiClient.setAuthHydrating(false)
-        setSessionChecked(true)
       }
     })()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPublicAuthRoute])
 
-  if (!sessionChecked) {
-    return (
-      <Provider store={store}>
-        <QueryClientProvider client={queryClient}>
-          <Loading />
-        </QueryClientProvider>
-      </Provider>
-    )
-  }
-
+  
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>

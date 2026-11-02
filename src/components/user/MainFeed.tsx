@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import {
   Search,
   Home,
@@ -21,7 +20,7 @@ import { PostQuestionBox } from './PostQuestionBox'
 import { ShareStoryBox } from './ShareStoryBox'
 
 import { useState, useRef, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useFeedPosts } from '../../hooks/useFeedPosts'
 import { useStoriesFeed } from '../../hooks/useStoriesFeed'
 import apiClient from '../../lib/api-client'
@@ -48,14 +47,15 @@ function Highlight({ text, query }: { text: string; query: string }) {
 
 export default function MainFeed({ initialTab }: { initialTab?: 'home' | 'qa' | 'stories' } = {}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'home' | 'qa' | 'stories'>(initialTab || 'home')
 
   // Allow external links to open a specific tab and focus the composer
   useEffect(() => {
     try {
-      const tab = searchParams?.get?.('tab')
-      const compose = searchParams?.get?.('compose')
+      if (typeof window === 'undefined') return
+      const params = new URLSearchParams(window.location.search)
+      const tab = params.get('tab')
+      const compose = params.get('compose')
       if (tab === 'home' || tab === 'qa' || tab === 'stories') {
         setActiveTab(tab)
       }
@@ -72,7 +72,7 @@ export default function MainFeed({ initialTab }: { initialTab?: 'home' | 'qa' | 
         }, 50)
       }
     } catch {}
-  }, [searchParams])
+  }, [])
 
   const {
     data: postPages,
@@ -248,20 +248,12 @@ export default function MainFeed({ initialTab }: { initialTab?: 'home' | 'qa' | 
       <div className="max-w-3xl mx-auto">
 
                 {/* 🏷️ Homepage Brand Identity & Purpose (SEO & Googlebot Accessible - Visually Hidden via sr-only) */}
-        <header className="sr-only">
-          <h1>BusinessTalk24 — Professional Networking Platform</h1>
+        <section className="sr-only" aria-label="Main Feed Overview">
+          <h2>Business Feed & Discussions</h2>
           <p>
-            Connect, collaborate, and grow your business with BusinessTalk24. Share professional insights, ask business questions, explore entrepreneurial stories, and network with verified professionals worldwide.
+            Explore business insights, discussions, stories, and verified professional questions on BusinessTalk24.
           </p>
-          <nav aria-label="Explore Platform">
-            <Link href="/questions">Business Q&A</Link>
-            <Link href="/stories">Stories</Link>
-            <Link href="/blogs">Blogs</Link>
-            <Link href="/people">People</Link>
-            <Link href="/groups">Groups</Link>
-            <Link href="/about">About Us</Link>
-          </nav>
-        </header>
+        </section>
 
         {/* 🔍 Search Bar */}
         <div className="mb-6 relative" ref={searchBarRef}>

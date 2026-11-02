@@ -8,6 +8,9 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://businesstalk24.com'
 export const metadata: Metadata = {
 
   metadataBase: new URL(siteUrl),
+  alternates: {
+    canonical: 'https://businesstalk24.com/',
+  },
   title: {
     default: 'BusinessTalk24 - Professional Networking Platform',
     template: '%s | BusinessTalk24',

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { TrendingUp, Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useContentViewerContext } from '@/providers/ContentViewerProvider'
@@ -88,6 +89,7 @@ export function UserCard({
   person: any
   onProfileClick: (person: any) => void
 }) {
+  const requireAuth = useRequireAuth()
   const {
     state: followState,
     loading: followLoading,
@@ -100,6 +102,7 @@ export function UserCard({
   const handleAction = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    if (!requireAuth()) return
     if (followLoading) return
 
     if (followState === 'connect') {
@@ -563,7 +566,10 @@ export function RightSidebar() {
               <span className="text-xs text-gray-500 mb-3">Publish your own story and see if your content comes up here!</span>
               <button
                 className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-[#212529] text-white hover:bg-[#3D3D3D] transition-all duration-200"
-                onClick={() => router.push('/?tab=stories&compose=1')}
+                onClick={() => {
+                  if (!requireAuth()) return
+                  router.push('/?tab=stories&compose=1')
+                }}
               >
                 Share a Story
               </button>
@@ -582,13 +588,7 @@ export function RightSidebar() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold" style={{ color: '#212529' }}>Suggested for You</h2>
-            <button
-              className="text-xs font-medium transition-colors"
-              style={{ color: '#1A73E8' }}
-              onClick={() => router.push('/people')}
-            >
-              See all
-            </button>
+            <Link href="/people" className="text-xs font-medium transition-colors hover:underline" style={{ color: '#1A73E8' }}>See all</Link>
           </div>
           <div className="space-y-4">
             {people.map(person => (
@@ -609,14 +609,7 @@ export function RightSidebar() {
               <Users className="w-5 h-5" style={{ color: '#212529' }} />
               <h2 className="font-semibold" style={{ color: '#212529' }}>Groups for You</h2>
             </div>
-            <button 
-              className="text-xs font-medium transition-colors"
-              style={{ color: '#1A73E8' }}
-              tabIndex={-1}
-              onClick={() => router.push('/groups')}
-            >
-              See all
-            </button>
+            <Link href="/groups" className="text-xs font-medium transition-colors hover:underline" style={{ color: '#1A73E8' }}>See all</Link>
           </div>
           <div className="space-y-4">
             {groups.map(group => (

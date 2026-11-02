@@ -4,8 +4,10 @@ import { MapPin } from 'lucide-react'
 import { useFollow } from '@/hooks/useFollow'
 import { useAppSelector } from '@/hooks/useRedux'
 import { useState } from 'react'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 export default function PeopleCard({ user }: { user: any }) {
+  const requireAuth = useRequireAuth()
   const currentUserId = useAppSelector((state) => String(state.auth?.user?.id || ''))
   const isPendingProp = Boolean(
     user?.connection_request_id ||
@@ -36,6 +38,7 @@ export default function PeopleCard({ user }: { user: any }) {
   const handleConnect = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     e.stopPropagation()
+    if (!requireAuth()) return
     if (isSelf || followLoading || !isHydrated) return
 
     if (followState === 'connected') {
@@ -50,6 +53,7 @@ export default function PeopleCard({ user }: { user: any }) {
   const handlePendingAction = async (action: 'accept' | 'delete', e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     e.stopPropagation()
+    if (!requireAuth()) return
     if (followLoading) return
 
     if (action === 'accept') {

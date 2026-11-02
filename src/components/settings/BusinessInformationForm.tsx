@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Upload, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import apiClient from '@/lib/api-client'
 import {
@@ -16,6 +16,10 @@ import {
 
 type Props = {
   initial: BusinessProfileFields
+  profilePhoto?: File | null
+  coverImage?: File | null
+  photoRemoved?: boolean
+  coverRemoved?: boolean
   onSaved?: (user: any) => void
 }
 
@@ -47,10 +51,15 @@ function FieldLabel({ children, required }: { children: React.ReactNode; require
   )
 }
 
-export default function BusinessInformationForm({ initial, onSaved }: Props) {
+export default function BusinessInformationForm({
+  initial,
+  profilePhoto,
+  coverImage,
+  photoRemoved,
+  coverRemoved,
+  onSaved,
+}: Props) {
   const [form, setForm] = useState<BusinessProfileFields>({ ...EMPTY, ...initial })
-  const [logoFile, setLogoFile] = useState<File | null>(null)
-  const [logoPreview, setLogoPreview] = useState<string | null>(initial.business_logo || null)
   const [galleryUrls, setGalleryUrls] = useState<string[]>(parseGalleryList(initial.business_gallery))
   const [galleryFiles, setGalleryFiles] = useState<{ file: File; preview: string }[]>([])
   const [saving, setSaving] = useState(false)
@@ -58,12 +67,60 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
+  const isPredefinedType = (val?: string) =>
+    val ? (BUSINESS_TYPES as readonly string[]).filter((t) => t !== 'Other').includes(val) : false
+
+  const isPredefinedCategory = (val?: string) =>
+    val ? (BUSINESS_CATEGORIES as readonly string[]).filter((c) => c !== 'Other').includes(val) : false
+
+  const [typeSelect, setTypeSelect] = useState<string>(() => {
+    if (!initial.business_type) return ''
+    return isPredefinedType(initial.business_type) ? initial.business_type : 'Other'
+  })
+  const [otherBusinessType, setOtherBusinessType] = useState<string>(() => {
+    if (!initial.business_type) return ''
+    return isPredefinedType(initial.business_type) ? '' : (initial.business_type === 'Other' ? '' : initial.business_type)
+  })
+
+  const [categorySelect, setCategorySelect] = useState<string>(() => {
+    if (!initial.business_category) return ''
+    return isPredefinedCategory(initial.business_category) ? initial.business_category : 'Other'
+  })
+  const [otherBusinessCategory, setOtherBusinessCategory] = useState<string>(() => {
+    if (!initial.business_category) return ''
+    return isPredefinedCategory(initial.business_category) ? '' : (initial.business_category === 'Other' ? '' : initial.business_category)
+  })
+
   useEffect(() => {
     setForm({ ...EMPTY, ...initial })
-    setLogoPreview(initial.business_logo || null)
-    setLogoFile(null)
     setGalleryUrls(parseGalleryList(initial.business_gallery))
     setGalleryFiles([])
+
+    if (initial.business_type) {
+      if (isPredefinedType(initial.business_type)) {
+        setTypeSelect(initial.business_type)
+        setOtherBusinessType('')
+      } else {
+        setTypeSelect('Other')
+        setOtherBusinessType(initial.business_type === 'Other' ? '' : initial.business_type)
+      }
+    } else {
+      setTypeSelect('')
+      setOtherBusinessType('')
+    }
+
+    if (initial.business_category) {
+      if (isPredefinedCategory(initial.business_category)) {
+        setCategorySelect(initial.business_category)
+        setOtherBusinessCategory('')
+      } else {
+        setCategorySelect('Other')
+        setOtherBusinessCategory(initial.business_category === 'Other' ? '' : initial.business_category)
+      }
+    } else {
+      setCategorySelect('')
+      setOtherBusinessCategory('')
+    }
   }, [initial])
 
   const galleryCount = galleryUrls.length + galleryFiles.length
@@ -71,17 +128,6 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
 
   const setField = (key: keyof BusinessProfileFields, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }))
-  }
-
-  const handleLogo = (file?: File) => {
-    if (!file) return
-    const err = validateBusinessImageFile(file)
-    if (err) { setError(err); return }
-    setError('')
-    setLogoFile(file)
-    const reader = new FileReader()
-    reader.onload = (ev) => setLogoPreview(ev.target?.result as string)
-    reader.readAsDataURL(file)
   }
 
   const handleGalleryAdd = (files: FileList | null) => {
@@ -98,11 +144,21 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
   }
 
   const clientValidate = () => {
+    const finalType = typeSelect === 'Other' ? otherBusinessType.trim() : typeSelect
+    const finalCategory = categorySelect === 'Other' ? otherBusinessCategory.trim() : categorySelect
+
     if (!form.business_name?.trim()) return 'Business name is required'
-    if (!logoPreview) return 'Business logo is required'
     if (!form.business_established_year) return 'Year of establishment is required'
-    if (!form.business_type) return 'Business type is required'
-    if (!form.business_category) return 'Industry / business category is required'
+    if (!finalType) {
+      return typeSelect === 'Other'
+        ? 'Please specify your business type'
+        : 'Business type is required'
+    }
+    if (!finalCategory) {
+      return categorySelect === 'Other'
+        ? 'Please specify your industry / business category'
+        : 'Industry / business category is required'
+    }
     if (!form.business_address?.trim()) return 'Business address is required'
     if (!form.business_city?.trim()) return 'City / location is required'
     if (!form.business_about?.trim()) return 'About business is required'
@@ -122,12 +178,15 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
     setError('')
     setSuccess('')
     try {
+      const finalType = typeSelect === 'Other' ? otherBusinessType.trim() : typeSelect
+      const finalCategory = categorySelect === 'Other' ? otherBusinessCategory.trim() : categorySelect
+
       const data = new FormData()
       data.append('account_type', ACCOUNT_TYPE.BUSINESS)
       data.append('business_name', form.business_name!.trim())
       data.append('business_established_year', String(form.business_established_year))
-      data.append('business_type', String(form.business_type))
-      data.append('business_category', String(form.business_category))
+      data.append('business_type', finalType)
+      data.append('business_category', finalCategory)
       data.append('business_address', form.business_address!.trim())
       data.append('business_city', form.business_city!.trim())
       data.append('business_phone', (form.business_phone || '').trim())
@@ -135,7 +194,20 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
       data.append('business_about', form.business_about!.trim())
       data.append('business_products_services', form.business_products_services!.trim())
       data.append('business_gallery', JSON.stringify(galleryUrls))
-      if (logoFile) data.append('business_logo', logoFile)
+      if (profilePhoto) {
+        data.append('profile_photo', profilePhoto)
+        data.append('business_logo', profilePhoto)
+      } else if (photoRemoved) {
+        data.append('profile_photo', '')
+        data.append('business_logo', '')
+      }
+
+      if (coverImage) {
+        data.append('cover_image', coverImage)
+      } else if (coverRemoved) {
+        data.append('cover_image', '')
+      }
+
       galleryFiles.forEach((item) => data.append('gallery_images', item.file))
 
       const res = await apiClient.updateProfile(data)
@@ -145,9 +217,7 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
           ? 'Business profile updated successfully!'
           : 'Business profile saved. Your account is now a business account.'
       )
-      setLogoFile(null)
       setGalleryFiles([])
-      if (user?.business_logo) setLogoPreview(user.business_logo)
       if (user?.business_gallery) setGalleryUrls(parseGalleryList(user.business_gallery))
       onSaved?.(user)
     } catch (err: any) {
@@ -161,10 +231,33 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
 
   const handleCancel = () => {
     setForm({ ...EMPTY, ...initial })
-    setLogoPreview(initial.business_logo || null)
-    setLogoFile(null)
     setGalleryUrls(parseGalleryList(initial.business_gallery))
     setGalleryFiles([])
+    if (initial.business_type) {
+      if (isPredefinedType(initial.business_type)) {
+        setTypeSelect(initial.business_type)
+        setOtherBusinessType('')
+      } else {
+        setTypeSelect('Other')
+        setOtherBusinessType(initial.business_type === 'Other' ? '' : initial.business_type)
+      }
+    } else {
+      setTypeSelect('')
+      setOtherBusinessType('')
+    }
+
+    if (initial.business_category) {
+      if (isPredefinedCategory(initial.business_category)) {
+        setCategorySelect(initial.business_category)
+        setOtherBusinessCategory('')
+      } else {
+        setCategorySelect('Other')
+        setOtherBusinessCategory(initial.business_category === 'Other' ? '' : initial.business_category)
+      }
+    } else {
+      setCategorySelect('')
+      setOtherBusinessCategory('')
+    }
     setError('')
     setSuccess('')
   }
@@ -204,25 +297,6 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
       {success && <div className="text-sm text-green-700 bg-green-50 rounded-xl p-3 border border-green-200">{success}</div>}
 
       <div>
-        <FieldLabel required>Business Logo</FieldLabel>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 border flex items-center justify-center shrink-0">
-            {logoPreview
-              ? <img src={logoPreview} alt="Business logo" className="w-full h-full object-cover" />
-              : <Upload className="w-7 h-7 text-gray-400" />}
-          </div>
-          <div>
-            <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer text-sm font-medium hover:bg-gray-50" style={{ borderColor: '#E8E8E8', color: '#212529' }}>
-              <Upload className="w-4 h-4" />
-              {logoPreview ? 'Change Logo' : 'Upload Logo'}
-              <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => handleLogo(e.target.files?.[0])} />
-            </label>
-            <p className="text-xs text-gray-400 mt-1">JPG, PNG (Max 5MB)</p>
-          </div>
-        </div>
-      </div>
-
-      <div>
         <FieldLabel required>Business Name</FieldLabel>
         <input value={form.business_name || ''} onChange={(e) => setField('business_name', e.target.value)} placeholder="Aarav Foods Pvt. Ltd." className={inputCls} style={inputStyle} />
       </div>
@@ -230,27 +304,76 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <FieldLabel required>Year of Establishment</FieldLabel>
-          <select value={String(form.business_established_year || '')} onChange={(e) => setField('business_established_year', e.target.value)} className={inputCls} style={{ ...inputStyle, backgroundColor: '#fff' }}>
+          <select
+            value={String(form.business_established_year || '')}
+            onChange={(e) => setField('business_established_year', e.target.value)}
+            className={inputCls}
+            style={{ ...inputStyle, backgroundColor: '#fff' }}
+          >
             <option value="">Select year</option>
             {yearOptions.map((year) => <option key={year} value={year}>{year}</option>)}
           </select>
         </div>
         <div>
           <FieldLabel required>Business Type</FieldLabel>
-          <select value={form.business_type || ''} onChange={(e) => setField('business_type', e.target.value)} className={inputCls} style={{ ...inputStyle, backgroundColor: '#fff' }}>
+          <select
+            value={typeSelect}
+            onChange={(e) => {
+              setTypeSelect(e.target.value)
+              if (e.target.value !== 'Other') setOtherBusinessType('')
+            }}
+            className={inputCls}
+            style={{ ...inputStyle, backgroundColor: '#fff' }}
+          >
             <option value="">Select type</option>
             {BUSINESS_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
           </select>
         </div>
       </div>
 
+      {typeSelect === 'Other' && (
+        <div className="p-4 bg-gray-50/80 border border-gray-200 rounded-xl space-y-1.5 transition-all">
+          <FieldLabel required>Specify Custom Business Type</FieldLabel>
+          <input
+            type="text"
+            value={otherBusinessType}
+            onChange={(e) => setOtherBusinessType(e.target.value)}
+            placeholder="Ex: Research & Development Lab, Space Tech, Venture Studio..."
+            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black transition-all text-sm"
+            required
+          />
+        </div>
+      )}
+
       <div>
         <FieldLabel required>Industry / Business Category</FieldLabel>
-        <select value={form.business_category || ''} onChange={(e) => setField('business_category', e.target.value)} className={inputCls} style={{ ...inputStyle, backgroundColor: '#fff' }}>
+        <select
+          value={categorySelect}
+          onChange={(e) => {
+            setCategorySelect(e.target.value)
+            if (e.target.value !== 'Other') setOtherBusinessCategory('')
+          }}
+          className={inputCls}
+          style={{ ...inputStyle, backgroundColor: '#fff' }}
+        >
           <option value="">Select category</option>
           {BUSINESS_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
         </select>
       </div>
+
+      {categorySelect === 'Other' && (
+        <div className="p-4 bg-gray-50/80 border border-gray-200 rounded-xl space-y-1.5 transition-all">
+          <FieldLabel required>Specify Custom Industry / Business Category</FieldLabel>
+          <input
+            type="text"
+            value={otherBusinessCategory}
+            onChange={(e) => setOtherBusinessCategory(e.target.value)}
+            placeholder="Ex: Biotechnology, Clean Energy, Aerospace, Robotics..."
+            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black transition-all text-sm"
+            required
+          />
+        </div>
+      )}
 
       <div>
         <FieldLabel required>Business Address</FieldLabel>

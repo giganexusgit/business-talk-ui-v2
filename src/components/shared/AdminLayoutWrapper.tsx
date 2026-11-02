@@ -35,7 +35,7 @@ export const AdminLayoutWrapper = ({ children }: { children: React.ReactNode }) 
       }
 
       if (!isAdmin(user.role_id)) {
-        router.replace('/dashboard')
+        router.replace('/')
         return
       }
 

@@ -58,7 +58,28 @@ export type BusinessProfileFields = {
 }
 
 export function isBusinessAccount(user: any) {
-  return user?.account_type === ACCOUNT_TYPE.BUSINESS
+  return user?.account_type === ACCOUNT_TYPE.BUSINESS || user?.isBusiness === true
+}
+
+export function hasCompanyDetails(user: any) {
+  if (!user) return false
+  return Boolean(
+    user.business_name ||
+    user.company ||
+    user.business_type ||
+    user.business_category ||
+    user.business_about ||
+    user.business_address ||
+    user.business_city ||
+    user.business_phone ||
+    user.business_website ||
+    user.business_products_services ||
+    (Array.isArray(user.business_gallery) && user.business_gallery.length > 0)
+  )
+}
+
+export function shouldShowCompanyTab(user: any) {
+  return isBusinessAccount(user) && hasCompanyDetails(user)
 }
 
 export function parseGalleryList(value: unknown): string[] {
@@ -93,8 +114,7 @@ export function displayNameFromUser(user: any) {
 }
 
 export function displayAvatarFromUser(user: any) {
-  if (isBusinessAccount(user) && user?.business_logo) return user.business_logo
-  return user?.profile_photo || user?.avatar || ''
+  return user?.profile_photo || user?.avatar || user?.business_logo || ''
 }
 
 export function displayTitleFromUser(user: any) {
@@ -105,12 +125,17 @@ export function displayTitleFromUser(user: any) {
 }
 
 export function publicProfileFromUser(p: any) {
+  if (!p) return null
   const business = isBusinessAccount(p)
   return {
+    id: p.id || p._id,
     username: p.username,
     name: displayNameFromUser(p),
+    full_name: p.full_name || p.name,
+    profession: p.profession,
     cover_image: p.cover_image,
     avatar: displayAvatarFromUser(p) || p.profile_photo,
+    profile_photo: p.profile_photo,
     title: displayTitleFromUser(p),
     location: business ? p.business_city || p.business_address || p.location : p.location,
     company: business ? p.business_name || p.company : p.company,
@@ -125,11 +150,15 @@ export function publicProfileFromUser(p: any) {
       ? p.skills.split(',').map((s: string) => s.trim()).filter(Boolean)
       : [],
     short_bio: p.short_bio,
-    profession: p.profession,
-    account_type: p.account_type || ACCOUNT_TYPE.PROFESSIONAL,
+    account_type: p.account_type || (business ? ACCOUNT_TYPE.BUSINESS : ACCOUNT_TYPE.PROFESSIONAL),
     isBusiness: business,
+    business_name: business ? p.business_name || p.company : undefined,
+    business_logo: business ? p.business_logo : undefined,
+    business_phone: business ? p.business_phone || p.phone_number : undefined,
+    business_city: business ? p.business_city : undefined,
     business_website: business ? p.business_website : undefined,
     business_address: business ? p.business_address : undefined,
+    business_about: business ? p.business_about : undefined,
     business_products_services: business ? p.business_products_services : undefined,
     business_gallery: business ? parseGalleryList(p.business_gallery) : [],
     business_established_year: business ? p.business_established_year : undefined,

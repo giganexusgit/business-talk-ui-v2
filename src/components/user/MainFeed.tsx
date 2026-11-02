@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import {
   Search,
   Home,
@@ -11,7 +12,6 @@ import {
   Users,
   FileQuestion,
 } from 'lucide-react'
-import { useAuthWall } from '@/providers/AuthWallProvider'
 
 import { FeedPost } from './FeedPost'
 import { CreatePostBox } from './CreatePostBox'
@@ -46,59 +46,10 @@ function Highlight({ text, query }: { text: string; query: string }) {
   )
 }
 
-export default function MainFeed() {
-  const { showLoginModal } =
-    useAuthWall()
-
-  const [guestWallShown,
-    setGuestWallShown] =
-    useState(false)
+export default function MainFeed({ initialTab }: { initialTab?: 'home' | 'qa' | 'stories' } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'home' | 'qa' | 'stories'>('home')
-
-  useEffect(() => {
-    if (
-      typeof window === 'undefined'
-    )
-      return
-
-    const user =
-      localStorage.getItem('user')
-
-    if (user) return
-
-    const handleScroll = () => {
-      if (guestWallShown) return
-
-      const scrollPercent =
-        window.scrollY /
-        (document.body.scrollHeight -
-          window.innerHeight)
-
-      if (scrollPercent > 0.25) {
-        setGuestWallShown(true)
-
-        setTimeout(() => {
-          showLoginModal()
-        }, 500)
-      }
-    }
-
-    window.addEventListener(
-      'scroll',
-      handleScroll
-    )
-
-    return () =>
-      window.removeEventListener(
-        'scroll',
-        handleScroll
-      )
-  }, [
-    guestWallShown,
-    showLoginModal,
-  ])
+  const [activeTab, setActiveTab] = useState<'home' | 'qa' | 'stories'>(initialTab || 'home')
 
   // Allow external links to open a specific tab and focus the composer
   useEffect(() => {
@@ -295,6 +246,22 @@ export default function MainFeed() {
   return (
     <main className="flex-1 min-w-0 p-3 sm:p-6 overflow-y-auto overflow-x-hidden bg-[#F8F9FA]">
       <div className="max-w-3xl mx-auto">
+
+                {/* 🏷️ Homepage Brand Identity & Purpose (SEO & Googlebot Accessible - Visually Hidden via sr-only) */}
+        <header className="sr-only">
+          <h1>BusinessTalk24 — Professional Networking Platform</h1>
+          <p>
+            Connect, collaborate, and grow your business with BusinessTalk24. Share professional insights, ask business questions, explore entrepreneurial stories, and network with verified professionals worldwide.
+          </p>
+          <nav aria-label="Explore Platform">
+            <Link href="/questions">Business Q&A</Link>
+            <Link href="/stories">Stories</Link>
+            <Link href="/blogs">Blogs</Link>
+            <Link href="/people">People</Link>
+            <Link href="/groups">Groups</Link>
+            <Link href="/about">About Us</Link>
+          </nav>
+        </header>
 
         {/* 🔍 Search Bar */}
         <div className="mb-6 relative" ref={searchBarRef}>

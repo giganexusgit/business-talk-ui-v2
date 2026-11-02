@@ -330,10 +330,7 @@ class ApiClient {
                 !localStorage.getItem('user')
 
               if (isGuest) {
-                window.dispatchEvent(
-                  new CustomEvent('show-login-modal')
-                )
-
+                // Background request failed for guest - do not aggressively force popup
                 return Promise.reject(refreshError)
               }
 
@@ -521,28 +518,43 @@ class ApiClient {
   async completeProfile(data: any) {
     let body: string | FormData
 
-    if (data.profile_photo) {
-      const form = new FormData()
-
-      Object.entries(data).forEach(([key, value]) => {
-        if (key === 'skills' && Array.isArray(value)) {
-          value.forEach((v) => form.append('skills', v))
-        } else if (value !== undefined && value !== null) {
-          if (
-            typeof value === 'object' &&
-            !(value instanceof File) &&
-            !(value instanceof Blob)
-          ) {
-            form.append(key, JSON.stringify(value))
-          } else {
-            form.append(key, value as string | Blob)
-          }
-        }
-      })
-
-      body = form
+    if (data instanceof FormData) {
+      body = data
     } else {
-      body = JSON.stringify(data)
+      const hasFiles = Boolean(
+        data?.profile_photo instanceof File ||
+        data?.cover_image instanceof File ||
+        data?.business_logo instanceof File ||
+        (Array.isArray(data?.gallery_images) && data.gallery_images.some((f: any) => f instanceof File))
+      )
+
+      if (hasFiles) {
+        const form = new FormData()
+
+        Object.entries(data).forEach(([key, value]) => {
+          if (key === 'skills' && Array.isArray(value)) {
+            value.forEach((v) => form.append('skills', v))
+          } else if (key === 'gallery_images' && Array.isArray(value)) {
+            value.forEach((v) => {
+              if (v instanceof File) form.append('gallery_images', v)
+            })
+          } else if (value !== undefined && value !== null) {
+            if (
+              typeof value === 'object' &&
+              !(value instanceof File) &&
+              !(value instanceof Blob)
+            ) {
+              form.append(key, JSON.stringify(value))
+            } else {
+              form.append(key, value as string | Blob)
+            }
+          }
+        })
+
+        body = form
+      } else {
+        body = JSON.stringify(data)
+      }
     }
 
     const res = await fetch(`${API_BASE_URL}/user/me`, {
@@ -885,6 +897,10 @@ class ApiClient {
     return this.client.get('/follow/suggestions')
   }
 
+  getPeople(params?: Record<string, any>) {
+    return this.client.get('/user/people', { params })
+  }
+
   getFollowers(id: string) {
     return this.client.get(`/follow/${id}/followers`)
   }
@@ -907,6 +923,10 @@ class ApiClient {
 
   getConversations() {
     return this.client.get('/chat/my/conversations')
+  }
+
+  getPresence() {
+    return this.client.get('/chat/presence')
   }
 
   // FIXED — cursor pagination: pass `before` (Unix ms string) to load older messages

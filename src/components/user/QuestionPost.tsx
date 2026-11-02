@@ -122,6 +122,7 @@ export function QuestionPost({
   const [isDeleted, setIsDeleted] = useState(false)
   const [deleteToast, setDeleteToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const reduxUser = useAppSelector((state: any) => state.auth.user)
+  const isOwnQuestion = Boolean((currentUserId || reduxUser?.id) && authorId && String(currentUserId || reduxUser?.id) === String(authorId))
   const requireAuth = useRequireAuth()
 
   const queryClient = useQueryClient()
@@ -573,7 +574,7 @@ export function QuestionPost({
                       }`}
                     /> {reply.dislikes}
                   </button>
-                    <p
+                    <div
                       className="text-lg font-semibold cursor-pointer"
                       tabIndex={0}
                     >
@@ -593,7 +594,7 @@ export function QuestionPost({
                           views,
                         })
                       } lines={4} className="font-semibold text-lg">{displayQuestion}</ExpandableText>
-                    </p>
+                    </div>
                   <button onClick={() => setReplyingTo(reply.id)}>
                     Reply
                   </button>
@@ -692,7 +693,7 @@ export function QuestionPost({
             </button>
 
             {showActionMenu && (
-              <div className="absolute right-0 bg-white border rounded shadow p-2 row-gap-2 flex flex-col text-sm z-10">
+              <div className="absolute right-0 mt-1 bg-white border rounded-lg shadow-lg z-10 px-3 py-2 flex items-center gap-1 whitespace-nowrap">
                 <button
                   onClick={handleSave}
                   className="group p-2 rounded transition-all duration-200 flex items-center gap-1 text-xs hover:bg-gray-100 hover:gap-2"
@@ -711,51 +712,55 @@ export function QuestionPost({
                     {isSaved ? 'Unsave' : 'Save'}
                   </span>
                 </button>
-                <button
-                  onClick={followState === 'connected' ? unfollow : follow}
-                  disabled={isBanned}
-                  className="group p-2 rounded transition flex items-center gap-1 text-xs hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ color: '#374151' }}
-                  title={
-                    followState === 'connected'
-                      ? 'Disconnect'
-                      : followState === 'pending'
-                      ? 'Requested'
-                      : 'Connect'
-                  }
-                >
-                  {/* Icon based on state */}
-                  {followState === 'connected' ? (
-                    <UserCheck className="w-4 h-4" />
-                  ) : followState === 'pending' ? (
-                    <UserMinus className="w-4 h-4" />
-                  ) : (
-                    <UserPlus className="w-4 h-4" />
-                  )}
+                {!isOwnQuestion && (
+                  <>
+                    <button
+                      onClick={followState === 'connected' ? unfollow : follow}
+                      disabled={isBanned}
+                      className="group p-2 rounded transition flex items-center gap-1 text-xs hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ color: '#374151' }}
+                      title={
+                        followState === 'connected'
+                          ? 'Disconnect'
+                          : followState === 'pending'
+                          ? 'Requested'
+                          : 'Connect'
+                      }
+                    >
+                      {/* Icon based on state */}
+                      {followState === 'connected' ? (
+                        <UserCheck className="w-4 h-4" />
+                      ) : followState === 'pending' ? (
+                        <UserMinus className="w-4 h-4" />
+                      ) : (
+                        <UserPlus className="w-4 h-4" />
+                      )}
 
-                  {/* Text appears only on hover */}
-                  <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
-                    {followState === 'connected'
-                      ? 'Disconnect'
-                      : followState === 'pending'
-                      ? 'Requested'
-                      : 'Connect'}
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowReportModal(true)
-                    setShowActionMenu(false)
-                  }}
-                  title='Report'
-                  className="group flex items-center gap-1 text-red-600 hover:bg-gray-100 px-2 py-1 rounded transition-all duration-200 hover:gap-2"
-                >
-                <Flag className="w-4 h-4" />
-                <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
-                  Report
-                </span>
-                </button>
-                {currentUserId && currentUserId === authorId && (
+                      {/* Text appears only on hover */}
+                      <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
+                        {followState === 'connected'
+                          ? 'Disconnect'
+                          : followState === 'pending'
+                          ? 'Requested'
+                          : 'Connect'}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowReportModal(true)
+                        setShowActionMenu(false)
+                      }}
+                      title='Report'
+                      className="group flex items-center gap-1 text-red-600 hover:bg-gray-100 px-2 py-1 rounded transition-all duration-200 hover:gap-2"
+                    >
+                      <Flag className="w-4 h-4" />
+                      <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
+                        Report
+                      </span>
+                    </button>
+                  </>
+                )}
+                {isOwnQuestion && (
                   <>
                     <button
                       onClick={() => {
@@ -794,7 +799,7 @@ export function QuestionPost({
         </div>
 
         {/* QUESTION */}
-        <p
+        <div
           className="cursor-pointer hover:opacity-80"  // add font-blod/semibold if you want a bit bold text for question
           tabIndex={0}
         >
@@ -819,7 +824,7 @@ export function QuestionPost({
           >
             {displayQuestion}
           </ExpandableText>
-        </p>
+        </div>
         {/* </ExpandableText> */}
 
         {displayDescription && (
@@ -872,7 +877,10 @@ export function QuestionPost({
             <Eye className="inline w-5 h-5" /> {views}
           </div>
 
-          <button className="ml-auto" onClick={() => setShowShareModal(true)}>
+          <button className="ml-auto" onClick={() => {
+            if (!requireAuth()) return
+            setShowShareModal(true)
+          }}>
             <Send className="inline w-5 h-5" />
           </button>
         </div>
@@ -880,7 +888,10 @@ export function QuestionPost({
         {/* ANSWER INPUT */}
         {!showAnswerBox ? (
           <button
-            onClick={() => setShowAnswerBox(true)}
+            onClick={() => {
+              if (!requireAuth()) return
+              setShowAnswerBox(true)
+            }}
             disabled={isBanned}
             className="mt-4 w-full border rounded-full py-3 flex items-center gap-1 justify-center text-gray-500 transition-all hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
           >

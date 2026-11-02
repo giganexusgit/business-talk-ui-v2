@@ -2,33 +2,56 @@ import BioText from '@/components/common/BioText'
 
 export function ProfileAbout({ profile }: any) {
   const isBusiness = Boolean(profile?.isBusiness)
-  const bioContent = profile?.about || profile?.short_bio || profile?.bio
-  const products = isBusiness ? profile?.business_products_services : undefined
+  const bioContent = (profile?.about || profile?.short_bio || profile?.bio)?.trim()
+  const products = isBusiness ? profile?.business_products_services?.trim() : undefined
   const gallery: string[] = isBusiness && Array.isArray(profile?.business_gallery) ? profile.business_gallery : []
-  const website = isBusiness ? profile?.business_website : undefined
-  const address = isBusiness ? profile?.business_address : undefined
+  const website = isBusiness ? profile?.business_website?.trim() : undefined
+  const address = isBusiness ? (profile?.business_address || profile?.location)?.trim() : undefined
+  const establishedYear = isBusiness ? profile?.business_established_year : undefined
+
+  const hasAboutDetails = Boolean(bioContent || website || address || establishedYear)
+  const hasSkills = Array.isArray(profile?.skills) && profile.skills.length > 0
+
+  if (!hasAboutDetails && !products && gallery.length === 0 && !hasSkills) {
+    return (
+      <div className="bg-white p-6 rounded-2xl border text-sm text-gray-400">
+        No additional profile information provided.
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-6 rounded-2xl border">
-        <h2 className="text-xl font-semibold mb-4">{isBusiness ? 'About Business' : 'About'}</h2>
-        <BioText content={bioContent} fallback="No bio available" />
-        {isBusiness && (website || address || profile?.business_established_year) && (
-          <div className="mt-4 space-y-1 text-sm text-gray-600">
-            {profile?.business_established_year && (
-              <p>Established {profile.business_established_year}</p>
-            )}
-            {address && <p>{address}</p>}
-            {website && (
-              <a href={website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all">
-                {website.replace(/^https?:\/\//, '')}
-              </a>
-            )}
-          </div>
-        )}
-      </div>
+      {hasAboutDetails && (
+        <div className="bg-white p-6 rounded-2xl border">
+          <h2 className="text-xl font-semibold mb-4">{isBusiness ? 'About Business' : 'About'}</h2>
+          {bioContent ? (
+            <BioText content={bioContent} showEmptyFallback={false} />
+          ) : (
+            <BioText content="" fallback="No bio available" />
+          )}
+          {isBusiness && (website || address || establishedYear) && (
+            <div className={`${bioContent ? 'mt-4' : ''} space-y-1 text-sm text-gray-600`}>
+              {establishedYear && (
+                <p>Established {establishedYear}</p>
+              )}
+              {address && <p>{address}</p>}
+              {website && (
+                <a
+                  href={website.startsWith('http') ? website : `https://${website}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-blue-600 hover:underline break-all inline-block"
+                >
+                  {website.replace(/^https?:\/\//, '')}
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
-      {Array.isArray(profile?.skills) && profile.skills.length > 0 && (
+      {hasSkills && (
         <div className="bg-white p-6 rounded-2xl border">
           <h2 className="text-xl font-semibold mb-3">Skills</h2>
           <div className="flex flex-wrap gap-2">

@@ -19,7 +19,7 @@ export default function LoginRequiredModal({
     typeof window !== 'undefined'
       ? window.location.pathname +
         window.location.search
-      : '/dashboard'
+      : '/'
 
   const loginUrl =
     `/login?redirect=${encodeURIComponent(

@@ -25,7 +25,7 @@ export default function GoogleSuccessPage() {
         if (await isAdmin(user.role_id)) {
           router.replace('/admin/dashboard')
         } else {
-          router.replace('/dashboard')
+          router.replace('/')
         }
       } catch (err) {
         const msg = mapAuthError(err, 'google')

@@ -1,4 +1,13 @@
-'use client'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'User Agreement & Member Contract',
+  description: 'Official user agreement outlining member rights, responsibilities, content ownership, and account governance on BusinessTalk24.',
+  keywords: 'user agreement, member contract, account governance, content rights, platform license terms, user rights',
+  alternates: {
+    canonical: '/user-agreement',
+  },
+}
 
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/constants'
 

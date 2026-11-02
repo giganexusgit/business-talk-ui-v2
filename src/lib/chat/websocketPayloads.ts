@@ -52,3 +52,12 @@ export function parseWsPresencePayload(payload: unknown): { userId: string } | n
   }
   return { userId: payload.userId };
 }
+
+export function parseWsPresenceSyncPayload(payload: unknown): { onlineUserIds: string[] } | null {
+  if (!isObject(payload)) return null;
+  const list = (payload as any).onlineUserIds ?? (payload as any).users ?? payload;
+  if (Array.isArray(list)) {
+    return { onlineUserIds: list.map(String) };
+  }
+  return null;
+}

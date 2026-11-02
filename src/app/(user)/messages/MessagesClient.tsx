@@ -46,6 +46,7 @@ import {
 } from '@/redux/slices/chatSlice';
 import {
   emitTypingAction,
+  emitMarkSeenAction,
 } from '@/redux/middleware/websocketMiddleware';
 import {
   selectNonArchivedConversations,
@@ -66,7 +67,11 @@ import {
 } from '@/hooks/useInfiniteMessages';
 import { markConversationReadServer } from '@/redux/thunks/chatThunks';
 import MessageBubble from '@/components/user/chat/MessageBubble';
-import { formatChatTimestamp } from '@/lib/chat/time';
+import {
+  formatChatTimestamp,
+  formatChatDateDivider,
+  isDifferentDay,
+} from '@/lib/chat/time';
 import { mergeUniqueMessages } from '@/lib/chat/messages';
 import { buildOptimisticMessage } from '@/lib/chat/optimistic';
 import type { ConversationEntity, MessageEntity } from '@/types/chat';
@@ -194,11 +199,14 @@ const ConversationItem = React.memo<ConversationItemProps>(({
           </div>
         )}
         {conv.isGroup ? (
-          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white">
+          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
             <Users className="w-2 h-2 text-white" />
           </div>
         ) : isOnline ? (
-          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+          <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center">
+            <span className="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white shadow-xs" />
+          </div>
         ) : null}
       </div>
 
@@ -330,6 +338,15 @@ const MessagesClient = () => {
   const [showMobileList, setShowMobileList] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
+  // ── Online toast state ─────────────────────────────────────────────────────
+  const [onlineToast, setOnlineToast] = useState<{
+    userName: string;
+    avatar?: string;
+    userId: string;
+  } | null>(null);
+  const prevOnlineUsersRef = useRef<Set<string>>(new Set());
+  const initialOnlineLoadedRef = useRef(false);
+
   // ── Attachment state ───────────────────────────────────────────────────────
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
@@ -408,14 +425,13 @@ const MessagesClient = () => {
       if (activeConversationId !== found.id) {
         dispatch(setActiveConversation(found.id));
       }
-    } else if (!activeConversationId) {
+    } else if (!activeConversationId && conversations.length > 0) {
       dispatch(setActiveConversation(conversations[0].id));
     }
   }, [
     conversationsReady,
     conversations,
     conversationIdFromURL,
-    activeConversationId,
     dispatch,
   ]);
 
@@ -440,13 +456,54 @@ const MessagesClient = () => {
   );
 }, [userIdFromURL, dispatch]);
 
+  // Detect live users coming online and trigger live toast badge
+  useEffect(() => {
+    const currentSet = new Set(onlineUsers);
+
+    if (!initialOnlineLoadedRef.current) {
+      if (onlineUsers.length > 0) {
+        initialOnlineLoadedRef.current = true;
+        prevOnlineUsersRef.current = currentSet;
+      }
+      return;
+    }
+
+    for (const id of onlineUsers) {
+      if (!prevOnlineUsersRef.current.has(id) && id !== currentUserId) {
+        const matchedConv =
+          conversations.find((c) => c.participantId === id) ||
+          archivedConversations.find((c) => c.participantId === id);
+
+        if (matchedConv) {
+          setOnlineToast({
+            userName: matchedConv.name,
+            avatar: matchedConv.avatar,
+            userId: id,
+          });
+          break;
+        }
+      }
+    }
+
+    prevOnlineUsersRef.current = currentSet;
+  }, [onlineUsers, conversations, archivedConversations, currentUserId]);
+
+  useEffect(() => {
+    if (!onlineToast) return;
+    const timer = setTimeout(() => {
+      setOnlineToast(null);
+    }, 4500);
+    return () => clearTimeout(timer);
+  }, [onlineToast]);
+
   // Reset near-bottom anchor when switching conversations
   useEffect(() => {
     if (!activeConversationId) return;
     isNearBottomRef.current = true;
     setShowScrollButton(false);
-    // Optimistically clear unread badge in frontend and notify backend via thunk
+    // Optimistically clear unread badge in frontend and notify backend via WS & REST
     dispatch(markConversationRead(activeConversationId));
+    dispatch(emitMarkSeenAction({ conversationId: activeConversationId }));
     dispatch(markConversationReadServer(activeConversationId));
   }, [activeConversationId, dispatch]);
 
@@ -457,12 +514,22 @@ const MessagesClient = () => {
     if (count === prevMessageCountRef.current) return;
     const wasNew = count > prevMessageCountRef.current;
     prevMessageCountRef.current = count;
-    if (wasNew && isNearBottomRef.current) {
-      requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      });
+    if (wasNew) {
+      if (activeConversationId) {
+        dispatch(emitMarkSeenAction({ conversationId: activeConversationId }));
+      }
+      if (isNearBottomRef.current) {
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({
+              top: scrollContainerRef.current.scrollHeight,
+              behavior: 'smooth',
+            });
+          }
+        });
+      }
     }
-  }, [allMessages.length]);
+  }, [allMessages.length, activeConversationId, dispatch]);
 
   // Restore scroll position after prepending older pages
   useEffect(() => {
@@ -487,7 +554,9 @@ const MessagesClient = () => {
     ) {
       didScrollInitialRef.current = activeConversationId;
       requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
       });
     }
   }, [isInitialLoading, rqData, activeConversationId]);
@@ -546,12 +615,18 @@ const MessagesClient = () => {
     (id: string) => {
       dispatch(setActiveConversation(id));
       setShowMobileList(false);
+      router.replace(`/messages?conversationId=${id}`, { scroll: false });
     },
-    [dispatch],
+    [dispatch, router],
   );
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
   }, []);
 
   const handleHeaderAvatarClick = useCallback(() => {
@@ -639,6 +714,15 @@ const MessagesClient = () => {
     } else {
       dispatch(addPendingMessage(pendingMessage));
     }
+
+    requestAnimationFrame(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({
+          top: scrollContainerRef.current.scrollHeight,
+          behavior: 'smooth',
+        });
+      }
+    });
 
     try {
       setIsUploading(true);
@@ -774,7 +858,7 @@ const MessagesClient = () => {
     <div
       className="
       flex
-      h-screen
+      h-[calc(100dvh-4.25rem)] lg:h-[calc(100vh-0.5rem)]
       w-full
       overflow-hidden
       bg-[#F8F9FA]
@@ -863,57 +947,107 @@ const MessagesClient = () => {
         `}
       >
         {/* Header */}
-        <div className="p-3 md:p-4 flex items-center gap-2 md:gap-3 bg-white border-b">
-          <button
-            className="md:hidden p-1.5 rounded-lg hover:bg-gray-100 shrink-0"
-            onClick={() => setShowMobileList(true)}
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
+        <div className="px-4 py-3 md:py-3.5 flex items-center justify-between bg-white border-b border-gray-200/80 z-10 shadow-2xs">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              className="md:hidden p-1.5 -ml-1 rounded-lg hover:bg-gray-100 shrink-0 transition-colors"
+              onClick={() => setShowMobileList(true)}
+              aria-label="Back to conversations"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-700" />
+            </button>
 
-          {selectedConversation.isGroup || !selectedConversation.participantId ? (
-            <div className="relative shrink-0">
-              <img
-                src={selectedConversation.avatar}
-                alt={selectedConversation.name}
-                className="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover"
-              />
-              {activeConvIsOnline && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+            {selectedConversation.isGroup || !selectedConversation.participantId ? (
+              <div className="relative shrink-0">
+                <img
+                  src={selectedConversation.avatar}
+                  alt={selectedConversation.name}
+                  className="w-10 h-10 rounded-full object-cover border border-gray-200/80 shadow-2xs"
+                />
+                {activeConvIsOnline && (
+                  <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white ring-1 ring-emerald-500/20" />
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleHeaderAvatarClick}
+                className="relative shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-black/20"
+                aria-label={`Open ${selectedConversation.name} profile`}
+                title={`Open ${selectedConversation.name} profile`}
+              >
+                <img
+                  src={selectedConversation.avatar}
+                  alt={selectedConversation.name}
+                  className="w-10 h-10 rounded-full object-cover cursor-pointer border border-gray-200/80 shadow-2xs hover:opacity-90 transition-opacity"
+                />
+                {activeConvIsOnline && (
+                  <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white ring-1 ring-emerald-500/20" />
+                )}
+              </button>
+            )}
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h2 className="font-semibold text-sm md:text-base truncate text-gray-900 leading-tight">
+                  {selectedConversation.name}
+                </h2>
+              </div>
+              {typingUser ? (
+                <p className="text-xs text-emerald-600 font-medium animate-pulse flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  {typingUser} is typing&hellip;
+                </p>
+              ) : activeConvIsOnline ? (
+                <p className="text-xs text-emerald-600 font-medium flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Active now
+                </p>
+              ) : (
+                <p className="text-xs text-gray-400 mt-0.5">Offline</p>
               )}
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={handleHeaderAvatarClick}
-              className="relative shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-black/20"
-              aria-label={`Open ${selectedConversation.name} profile`}
-              title={`Open ${selectedConversation.name} profile`}
-            >
-              <img
-                src={selectedConversation.avatar}
-                alt={selectedConversation.name}
-                className="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover cursor-pointer"
-              />
-              {activeConvIsOnline && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
-              )}
-            </button>
-          )}
-
-          <div className="min-w-0 flex-1">
-            <h2 className="font-semibold text-sm md:text-base truncate">
-              {selectedConversation.name}
-            </h2>
-            {typingUser ? (
-              <p className="text-xs text-green-600 italic">
-                {typingUser} is typing&hellip;
-              </p>
-            ) : activeConvIsOnline ? (
-              <p className="text-xs text-green-600">Online</p>
-            ) : null}
           </div>
         </div>
+
+        {/* Live Online Toast Badge */}
+        {onlineToast && (
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 transition-all duration-300 transform animate-in fade-in slide-in-from-top-3">
+            <div className="flex items-center gap-2.5 px-4 py-2 bg-gray-900/95 backdrop-blur-md text-white rounded-full shadow-xl border border-white/10 text-xs font-medium">
+              <div className="relative shrink-0">
+                {onlineToast.avatar ? (
+                  <img
+                    src={onlineToast.avatar}
+                    alt={onlineToast.userName}
+                    className="w-5 h-5 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-gray-700 flex items-center justify-center text-[10px] text-white">
+                    {onlineToast.userName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-gray-900" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-white truncate max-w-[140px]">
+                  {onlineToast.userName}
+                </span>
+                <span className="text-emerald-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  is online now
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOnlineToast(null)}
+                className="ml-1 p-0.5 text-gray-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                aria-label="Dismiss toast"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Messages area */}
         <div
@@ -924,26 +1058,26 @@ const MessagesClient = () => {
             overflow-y-auto
             overflow-x-hidden
             min-h-0
-            bg-white
+            bg-[#F8F9FA]
             h-full
           "
         >
-          <div className="p-3 md:p-4 space-y-1">
+          <div className="p-3 md:p-5 max-w-4xl mx-auto w-full">
             {/* Invisible sentinel — IntersectionObserver triggers here */}
             <div ref={topSentinelRef} className="h-px" />
 
             {isFetchingNextPage && <OlderMessagesSkeletons />}
 
             {!hasNextPage && allMessages.length > 0 && (
-              <div className="flex items-center justify-center py-3">
-                <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+              <div className="flex items-center justify-center py-4">
+                <span className="text-[11px] font-medium text-gray-500 bg-white/90 border border-gray-200/80 px-3 py-1 rounded-full shadow-2xs">
                   Beginning of conversation
                 </span>
               </div>
             )}
 
             {isInitialLoading && (
-              <div className="space-y-1 py-4">
+              <div className="space-y-2 py-4">
                 {[...Array(6)].map((_, i) => (
                   <MessageSkeleton
                     key={i}
@@ -962,25 +1096,51 @@ const MessagesClient = () => {
             )}
 
             {!isInitialLoading && !isMessagesError && allMessages.length === 0 && (
-              <div className="py-6 text-center text-sm text-gray-500">
+              <div className="py-12 text-center text-sm text-gray-500">
                 No messages yet. Start the conversation.
               </div>
             )}
 
-            {allMessages.map((msg) => (
-              
-              <MessageBubble
-                key={`${msg.id}-${msg.updatedAt || msg.createdAt}`}
-                message={msg}
-                isMine={
-                  !!normalizedCurrentUserId &&
-                  normalizeId(msg.senderId) === normalizedCurrentUserId
-                }
-                isGroup={selectedConversation.isGroup}
-                displayTime={formatChatTimestamp(msg.createdAt)}
-              />
-              
-            ))}
+            {allMessages.map((msg, index) => {
+              const prevMsg = index > 0 ? allMessages[index - 1] : null;
+              const showDateDivider =
+                !prevMsg || isDifferentDay(prevMsg.createdAt, msg.createdAt);
+
+              return (
+                <React.Fragment key={`${msg.id}-${msg.updatedAt || msg.createdAt}`}>
+                  {showDateDivider && (
+                    <div className="relative flex items-center justify-center my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-200/70" />
+                      </div>
+                      <span className="relative px-3.5 py-1 bg-white border border-gray-200/80 rounded-full text-xs font-medium text-gray-600 shadow-2xs">
+                        {formatChatDateDivider(msg.createdAt)}
+                      </span>
+                    </div>
+                  )}
+                  <MessageBubble
+                    message={msg}
+                    isMine={
+                      !!normalizedCurrentUserId &&
+                      normalizeId(msg.senderId) === normalizedCurrentUserId
+                    }
+                    isGroup={selectedConversation.isGroup}
+                    displayTime={formatChatTimestamp(msg.createdAt)}
+                    senderAvatar={
+                      selectedConversation.avatar ||
+                      (selectedConversation as any).profilePhoto ||
+                      (selectedConversation as any).profile_photo
+                    }
+                    myAvatar={
+                      authUser?.profilePhoto ||
+                      authUser?.profile_photo ||
+                      authUser?.avatar ||
+                      authUser?.image
+                    }
+                  />
+                </React.Fragment>
+              );
+            })}
 
             <div ref={messagesEndRef} />
           </div>
@@ -990,7 +1150,7 @@ const MessagesClient = () => {
         {showScrollButton && (
           <button
             onClick={scrollToBottom}
-            className="absolute bottom-20 right-4 z-10 w-9 h-9 bg-white border border-gray-200 shadow-md rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors"
+            className="absolute bottom-20 right-6 z-10 w-9 h-9 bg-white border border-gray-200/90 shadow-md rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors"
             aria-label="Scroll to latest messages"
           >
             <ChevronDown className="w-4 h-4 text-gray-600" />
@@ -1122,14 +1282,14 @@ const MessagesClient = () => {
               }}
               onKeyDown={handleKeyDown}
               rows={1}
-              placeholder={selectedFile ? 'Add a caption (optional)...' : 'Type a message'}
-              className="flex-1 px-3 md:px-4 py-2 border rounded-xl resize-none max-h-28 overflow-y-auto text-sm focus:outline-none focus:ring-2 focus:ring-black/10 disabled:bg-gray-50"
+              placeholder={selectedFile ? 'Add a caption (optional)...' : 'Type a message...'}
+              className="flex-1 px-3.5 md:px-4 py-2.5 border border-gray-200/90 rounded-xl resize-none max-h-28 overflow-y-auto text-sm focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-gray-400 disabled:bg-gray-50 transition-colors placeholder:text-gray-400"
             />
 
             <button
               onClick={handleSendMessage}
               disabled={(!messageInput.trim() && !selectedFile) || isUploading}
-              className="bg-black text-white px-3 py-2 rounded-xl shrink-0 disabled:opacity-40 transition-opacity flex items-center justify-center min-w-[40px] h-[38px]"
+              className="bg-black hover:bg-gray-900 active:scale-95 text-white px-3.5 py-2.5 rounded-xl shrink-0 disabled:opacity-40 transition-all flex items-center justify-center min-w-[42px] h-[42px] shadow-xs cursor-pointer disabled:cursor-not-allowed"
               aria-label="Send message"
               title="Send message"
             >

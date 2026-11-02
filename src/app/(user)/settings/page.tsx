@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 
 
@@ -853,7 +853,17 @@ export default function SettingsPage() {
     e.target.value = ''
   }
 
+  const handleRemoveCover = () => {
+    setCoverImage(null)
+    setCoverPreview(null)
+    setCoverRemoved(true)
+  }
 
+  const handleRemovePhoto = () => {
+    setProfilePhoto(null)
+    setPhotoPreview(null)
+    setPhotoRemoved(true)
+  }
 
   const handleSwitchToProfessional = async () => {
     setSwitchingAccountType(true)
@@ -1113,6 +1123,114 @@ export default function SettingsPage() {
 
                 {success && <div className="text-sm text-green-700 bg-green-50 rounded-xl p-4 border border-green-200">{success}</div>}
 
+                {/* Cover image */}
+
+                <div className="bg-white rounded-2xl border p-6" style={{ border: '1px solid #E8E8E8' }}>
+
+                  <div className="flex items-center justify-between mb-1">
+                    <div>
+                      <h2 className="text-xl font-semibold" style={{ color: '#212529' }}>Cover Image</h2>
+                      <p className="text-xs text-gray-400 mt-0.5">Recommended: 1584×396px (16:5 ratio)</p>
+                    </div>
+                    {coverPreview && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveCover}
+                        className="text-xs text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/80 px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-medium transition cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Remove Cover Image
+                      </button>
+                    )}
+                  </div>
+
+                  <label className="block cursor-pointer mt-3">
+
+                    <div className="w-full rounded-xl overflow-hidden border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors flex items-center justify-center bg-gray-50 relative group"
+
+                      style={{ aspectRatio: '16/5' }}>
+
+                      {coverPreview
+
+                        ? <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
+
+                        : <div className="flex flex-col items-center gap-2 text-gray-400 py-6">
+
+                            <Upload className="w-8 h-8" />
+
+                            <span className="text-sm">Click to upload cover image</span>
+
+                          </div>
+
+                      }
+
+                    </div>
+
+                    <input type="file" accept="image/*" onChange={handleCoverChange} className="hidden" />
+
+                  </label>
+
+                  {coverPreview && (
+                    <button type="button" onClick={handleRemoveCover}
+                      className="mt-2 text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
+                      <X className="w-3 h-3" /> Remove
+                    </button>
+                  )}
+
+                </div>
+
+
+
+                {/* Profile photo */}
+
+                <div className="bg-white rounded-2xl border p-6" style={{ border: '1px solid #E8E8E8' }}>
+
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold" style={{ color: '#212529' }}>Profile Photo</h2>
+                    {photoPreview && (
+                      <button
+                        type="button"
+                        onClick={handleRemovePhoto}
+                        className="text-xs text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/80 px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-medium transition cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Remove Profile Photo
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+
+                    <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200 shadow-2xs">
+
+                      {photoPreview
+
+                        ? <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
+
+                        : <User className="w-10 h-10 text-gray-400" />
+
+                      }
+
+                    </div>
+
+                    <div className="flex-1 w-full">
+
+                      <label className="flex items-center justify-center w-full px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 transition-colors">
+
+                        <Upload className="w-4 h-4 mr-2 text-gray-500" />
+
+                        <span className="text-sm text-gray-600">
+                          {photoPreview ? 'Click to change profile photo' : 'Click to upload or drag and drop'}
+                        </span>
+
+                        <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+
+                      </label>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
                 <div className="bg-[#F1F3F4] rounded-full p-1 flex w-full max-w-md">
                   <button
                     type="button"
@@ -1124,7 +1242,7 @@ export default function SettingsPage() {
                       boxShadow: profileSection === 'basic' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
                     }}
                   >
-                    Basic Information
+                    Personal Information
                   </button>
                   <button
                     type="button"
@@ -1166,12 +1284,17 @@ export default function SettingsPage() {
                 {profileSection === 'business' ? (
                   <BusinessInformationForm
                     initial={businessInitial}
+                    profilePhoto={profilePhoto}
+                    coverImage={coverImage}
+                    photoRemoved={photoRemoved}
+                    coverRemoved={coverRemoved}
                     onSaved={(user) => {
                       const nextType = user?.account_type || ACCOUNT_TYPE.BUSINESS
                       setAccountType(nextType)
+                      setProfilePhoto(null)
+                      setCoverImage(null)
                       setBusinessInitial({
                         account_type: nextType,
-                        business_logo: user?.business_logo || businessInitial.business_logo || '',
                         business_name: user?.business_name || '',
                         business_established_year: user?.business_established_year || '',
                         business_type: user?.business_type || '',
@@ -1184,112 +1307,11 @@ export default function SettingsPage() {
                         business_products_services: user?.business_products_services || '',
                         business_gallery: user?.business_gallery || [],
                       })
-                      if (user) {
-                        try {
-                          const current = JSON.parse(localStorage.getItem('user') || '{}')
-                          const merged = { ...current, ...user }
-                          localStorage.setItem('user', JSON.stringify(merged))
-                          dispatch(setUser(merged))
-                        } catch {}
-                        if (typeof window !== 'undefined') {
-                          window.dispatchEvent(new CustomEvent('profile-updated', { detail: user }))
-                        }
-                      }
                       if (nextType === ACCOUNT_TYPE.PROFESSIONAL) setProfileSection('basic')
                     }}
                   />
                 ) : (
                 <>
-
-                {/* Cover image */}
-
-                <div className="bg-white rounded-2xl border p-6" style={{ border: '1px solid #E8E8E8' }}>
-
-                  <h2 className="text-xl font-semibold mb-1" style={{ color: '#212529' }}>Cover Image</h2>
-
-                  <p className="text-xs text-gray-400 mb-3">Recommended: 1584Ã—396px (16:5 ratio)</p>
-
-                  <label className="block cursor-pointer">
-
-                    <div className="w-full rounded-xl overflow-hidden border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors flex items-center justify-center bg-gray-50"
-
-                      style={{ aspectRatio: '16/5' }}>
-
-                      {coverPreview
-
-                        ? <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
-
-                        : <div className="flex flex-col items-center gap-2 text-gray-400 py-6">
-
-                            <Upload className="w-8 h-8" />
-
-                            <span className="text-sm">Click to upload cover image</span>
-
-                          </div>
-
-                      }
-
-                    </div>
-
-                    <input type="file" accept="image/*" onChange={handleCoverChange} className="hidden" />
-
-                  </label>
-
-                  {coverPreview && (
-                    <button type="button" onClick={() => { setCoverImage(null); setCoverPreview(null); setCoverRemoved(true) }}
-                      className="mt-2 text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
-                      <X className="w-3 h-3" /> Remove
-                    </button>
-                  )}
-
-                </div>
-
-
-
-                {/* Profile photo */}
-
-                <div className="bg-white rounded-2xl border p-6" style={{ border: '1px solid #E8E8E8' }}>
-
-                  <h2 className="text-xl font-semibold mb-4" style={{ color: '#212529' }}>Profile Photo</h2>
-
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-
-                    <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0">
-
-                      {photoPreview
-
-                        ? <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
-
-                        : <User className="w-10 h-10 text-gray-400" />
-
-                      }
-
-                    </div>
-
-                    <div className="flex-1">
-
-                      <label className="flex items-center justify-center w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 transition-colors">
-
-                        <Upload className="w-4 h-4 mr-2 text-gray-500" />
-
-                        <span className="text-sm text-gray-600">Click to upload or drag and drop</span>
-
-                        <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
-
-                      </label>
-
-                      {photoPreview && (
-                        <button type="button" onClick={() => { setProfilePhoto(null); setPhotoPreview(null); setPhotoRemoved(true) }}
-                          className="mt-1 text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
-                          <X className="w-3 h-3" /> Remove
-                        </button>
-                      )}
-
-                    </div>
-
-                  </div>
-
-                </div>
 
 
 
@@ -1297,7 +1319,7 @@ export default function SettingsPage() {
 
                 <div className="bg-white rounded-2xl border p-6 space-y-4" style={{ border: '1px solid #E8E8E8' }}>
 
-                  <h2 className="text-xl font-semibold" style={{ color: '#212529' }}>Basic Information</h2>
+                  <h2 className="text-xl font-semibold" style={{ color: '#212529' }}>Personal Information</h2>
 
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{ color: '#212529' }}>Full Name</label>

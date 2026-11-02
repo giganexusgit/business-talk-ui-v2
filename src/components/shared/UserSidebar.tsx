@@ -17,16 +17,22 @@ import {
   Info,
   FileEdit,
 } from 'lucide-react'
+import { useEffect } from 'react'
+import { useSelector } from 'react-redux'
 import { useAuth } from '@/hooks/useRedux'
 import { logout } from '@/redux/slices/authSlice'
-
+import { selectTotalUnreadCount } from '@/redux/selectors/chatSelectors'
+import { selectNotificationUnreadCount } from '@/redux/selectors/notificationSelectors'
+import { fetchUnreadCount } from '@/redux/slices/notificationsSlice'
+import { fetchConversations } from '@/redux/slices/chatSlice'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 // Data-driven sidebar sections for reuse
 export const userSidebarSections = [
   {
     title: 'Main',
     items: [
-      { label: 'Home', href: '/dashboard', icon: Home },
+      { label: 'Home', href: '/', icon: Home },
       { label: 'My Profile', href: '/profile', icon: User },
       { label: 'Messages', href: '/messages', icon: MessageSquare },
     ],
@@ -37,7 +43,6 @@ export const userSidebarSections = [
       { label: 'People', href: '/people', icon: Users },
       { label: 'Groups', href: '/groups', icon: UsersRound },
       { label: 'Blogs', href: '/blogs', icon: BookOpen },
-      // { label: 'Drafts', href: '/drafts', icon: FileEdit },
     ],
   },
   {
@@ -50,11 +55,21 @@ export const userSidebarSections = [
   },
 ]
 
-
 export const UserSidebar = () => {
   const pathname = usePathname()
-  const { dispatch } = useAuth()
+  const { dispatch, isAuthenticated } = useAuth()
   const router = useRouter()
+  const requireAuth = useRequireAuth()
+
+  const unreadMessages = useSelector(selectTotalUnreadCount)
+  const unreadNotifications = useSelector(selectNotificationUnreadCount)
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchUnreadCount())
+      dispatch(fetchConversations())
+    }
+  }, [dispatch, isAuthenticated])
 
   const handleLogout = async () => {
     await dispatch(logout())   // wait for logout to complete
@@ -66,7 +81,7 @@ export const UserSidebar = () => {
       {/* Logo */}
       <div className="px-6 py-6 border-b" style={{ borderColor: '#E8E8E8' }}>
         <Link
-          href="/dashboard"
+          href="/"
           aria-label="Go to home feed"
           className="inline-block outline-none focus-visible:ring-2 focus-visible:ring-black rounded-md transition-opacity hover:opacity-80 active:opacity-60"
         >
@@ -89,11 +104,22 @@ export const UserSidebar = () => {
               {section.items.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
+                const isProtected = ['/profile', '/messages', '/drafts', '/notifications', '/settings'].includes(item.href)
+                
+                let count = 0
+                if (item.href === '/messages') count = unreadMessages
+                if (item.href === '/notifications') count = unreadNotifications
+
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all"
+                    onClick={(e) => {
+                      if (isProtected && !requireAuth()) {
+                        e.preventDefault()
+                      }
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all group"
                     style={{
                       backgroundColor: isActive ? '#F8F9FA' : 'transparent',
                       color: '#212529',
@@ -109,7 +135,14 @@ export const UserSidebar = () => {
                       }
                     }}
                   >
-                    <Icon className="w-5 h-5" />
+                    <div className="relative flex items-center justify-center">
+                      <Icon className="w-5 h-5" />
+                      {count > 0 && (
+                        <span className="absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 text-[10px] font-bold bg-red-600 text-white rounded-full flex items-center justify-center leading-none shadow-xs">
+                          {count > 99 ? '99+' : count}
+                        </span>
+                      )}
+                    </div>
                     <span className="font-medium">{item.label}</span>
                   </Link>
                 )

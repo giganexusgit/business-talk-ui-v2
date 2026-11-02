@@ -1,197 +1,120 @@
-'use client'
+import type { Metadata } from 'next'
+import ProfileSlugClient from './ProfileSlugClient'
 
-import { useParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import apiClient from '@/lib/api-client'
-import { ProfileLayout } from '../components/ProfileLayout'
-import { useAppSelector } from '@/hooks/useRedux'
-import { publicProfileFromUser } from '@/lib/business-profile'
+interface PageProps {
+  params: Promise<{ slug: string }>
+}
 
 function parseIdFromSlug(slug?: string) {
   if (!slug) return ''
-
   const uuidMatch = slug.match(
     /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/
   )
-
   if (uuidMatch) return uuidMatch[0]
-
-  const firstPart = slug.includes('-')
-    ? slug.split('-')[0]
-    : slug
-
-  if (/^\d+$/.test(firstPart)) {
-    return firstPart
-  }
-
+  const firstPart = slug.includes('-') ? slug.split('-')[0] : slug
   return firstPart
 }
 
-export default function UserProfilePage() {
-  const params = useParams()
-
-  const slug = params.slug as string
-
+async function getUserData(slug: string) {
   const id = parseIdFromSlug(slug)
+  if (!id) return null
+  try {
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'
+    const res = await fetch(`${apiBase}/user/${id}`, {
+      next: { revalidate: 60 },
+    })
+    if (!res.ok) return null
+    const json = await res.json()
+    return json.data || json
+  } catch {
+    return null
+  }
+}
 
-  const [profile, setProfile] = useState<any>(null)
-  const [activity, setActivity] = useState<any>(null)
-  // const [stats] = useState<any>(null)
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params
+  const user = await getUserData(slug)
 
-  const [activityPage, setActivityPage] = useState(1)
-
-  const [loadingMoreActivity, setLoadingMoreActivity] =
-    useState(false)
-
-  const [hasMoreActivity, setHasMoreActivity] =
-    useState(true)
-
-  const currentUserId = useAppSelector((state) =>
-    String(state.auth?.user?.id || '')
-  )
-
-  const isOwnProfile =
-    currentUserId !== '' &&
-    currentUserId === String(id)
-
-  useEffect(() => {
-    if (!id) return
-
-    const fetchData = async () => {
-      try {
-        const [profileRes, activityRes] =
-          await Promise.all([
-            apiClient.getUserById(id),
-            apiClient.getUserActivityById(
-              id,
-              1,
-              10
-            ),
-          ])
-
-        const p = profileRes.data
-
-        setProfile(publicProfileFromUser(p))
-
-        setActivity(activityRes.data)
-
-        setActivityPage(1)
-
-        const pagination =
-          activityRes.data?.pagination
-
-        const maxPages = Math.max(
-          pagination?.posts?.totalPages || 0,
-          pagination?.comments?.totalPages || 0,
-          pagination?.blogs?.totalPages || 0,
-          pagination?.follows?.totalPages || 0
-        )
-
-        setHasMoreActivity(maxPages > 1)
-      } catch (err) {
-        console.error(err)
-      }
-    }
-
-    fetchData()
-  }, [id])
-
-  const loadMoreActivity = async () => {
-    if (
-      loadingMoreActivity ||
-      !hasMoreActivity
-    ) {
-      return
-    }
-
-    try {
-      setLoadingMoreActivity(true)
-
-      const nextPage = activityPage + 1
-
-      const res =
-        await apiClient.getUserActivityById(
-          id,
-          nextPage,
-          10
-        )
-
-      const newPosts =
-        res.data?.recentPosts || []
-
-      const newComments =
-        res.data?.recentComments || []
-
-      const newBlogs =
-        res.data?.recentBlogPosts || []
-
-      const newFollows =
-        res.data?.recentFollows || []
-
-      const pagination =
-        res.data?.pagination
-
-      const maxPages = Math.max(
-        pagination?.posts?.totalPages || 0,
-        pagination?.comments?.totalPages || 0,
-        pagination?.blogs?.totalPages || 0,
-        pagination?.follows?.totalPages || 0
-      )
-
-      if (nextPage >= maxPages) {
-        setHasMoreActivity(false)
-      }
-
-      setActivity((prev: any) => ({
-        ...prev,
-
-        recentPosts: [
-          ...(prev?.recentPosts || []),
-          ...newPosts,
-        ],
-
-        recentComments: [
-          ...(prev?.recentComments || []),
-          ...newComments,
-        ],
-
-        recentBlogPosts: [
-          ...(prev?.recentBlogPosts || []),
-          ...newBlogs,
-        ],
-
-        recentFollows: [
-          ...(prev?.recentFollows || []),
-          ...newFollows,
-        ],
-      }))
-
-      setActivityPage(nextPage)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoadingMoreActivity(false)
+  if (!user) {
+    return {
+      title: 'Professional Profile',
+      description: 'Connect, network, and collaborate with verified professionals on BusinessTalk24.',
+      alternates: {
+        canonical: `/profile/${slug}`,
+      },
     }
   }
 
-  if (!profile) {
-    return <div>Loading...</div>
+  const name = user.full_name || user.username || 'Professional Profile'
+  const title = user.profession ? `${name} - ${user.profession}` : `${name}`
+  const description =
+    user.bio ||
+    user.about ||
+    (user.profession ? `${name} is a ${user.profession} on BusinessTalk24.` : `Connect with ${name} on BusinessTalk24.`)
+  const image =
+    user.profile_photo && user.profile_photo.startsWith('http')
+      ? user.profile_photo
+      : 'https://businesstalk24.com/assets/logos/BUSINESSTALK24_LOGO_png.png'
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `/profile/${slug}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://businesstalk24.com/profile/${slug}`,
+      type: 'profile',
+      images: [
+        {
+          url: image,
+          width: 800,
+          height: 800,
+          alt: name,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+      images: [image],
+    },
   }
+}
+
+export default async function UserProfilePage({ params }: PageProps) {
+  const { slug } = await params
+  const user = await getUserData(slug)
+
+  const name = user?.full_name || user?.username || ''
+  const personSchema = user
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'ProfilePage',
+        mainEntity: {
+          '@type': 'Person',
+          name,
+          alternateName: user.username,
+          jobTitle: user.profession || undefined,
+          description: user.bio || undefined,
+          image: user.profile_photo || undefined,
+          url: `https://businesstalk24.com/profile/${slug}`,
+        },
+      }
+    : null
 
   return (
-    <ProfileLayout
-      profile={profile}
-      userId={id as string}
-      isOwnProfile={isOwnProfile}
-      // stats={stats}
-      activity={activity}
-      loadMoreActivity={loadMoreActivity}
-      loadingMoreActivity={
-        loadingMoreActivity
-      }
-      hasMoreActivity={
-        hasMoreActivity
-      }
-    />
+    <>
+      {personSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
+        />
+      )}
+      <ProfileSlugClient />
+    </>
   )
 }

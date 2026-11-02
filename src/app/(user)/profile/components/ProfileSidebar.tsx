@@ -157,19 +157,35 @@ export function ProfileSidebar({
     <div className="space-y-6">
 
       {/* CONTACT */}
-      <div className="bg-white p-6 rounded-2xl border">
-        <h2 className="font-semibold mb-4">Contact</h2>
-        <div className="space-y-3 text-sm text-gray-600">
-          <div className="flex gap-2 items-center">
-            <Mail className="w-4 h-4 shrink-0" />
-            <span className="truncate">{profile.email || 'N/A'}</span>
+      {(() => {
+        const contactEmail = profile?.email?.trim()
+        const contactPhone = (profile?.phone_number || profile?.business_phone)?.trim()
+        if (!contactEmail && !contactPhone) return null
+
+        return (
+          <div className="bg-white p-6 rounded-2xl border">
+            <h2 className="font-semibold mb-4">Contact</h2>
+            <div className="space-y-3 text-sm text-gray-600">
+              {contactEmail && (
+                <div className="flex gap-2 items-center">
+                  <Mail className="w-4 h-4 shrink-0" />
+                  <a href={`mailto:${contactEmail}`} className="truncate hover:text-blue-600 transition-colors">
+                    {contactEmail}
+                  </a>
+                </div>
+              )}
+              {contactPhone && (
+                <div className="flex gap-2 items-center">
+                  <Phone className="w-4 h-4 shrink-0" />
+                  <a href={`tel:${contactPhone}`} className="hover:text-blue-600 transition-colors">
+                    {contactPhone}
+                  </a>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex gap-2 items-center">
-            <Phone className="w-4 h-4 shrink-0" />
-            <span>{profile.phone_number || 'N/A'}</span>
-          </div>
-        </div>
-      </div>
+        )
+      })()}
 
       {/* STATS */}
       {stats && (

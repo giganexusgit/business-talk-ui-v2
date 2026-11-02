@@ -31,10 +31,15 @@ export const getRegisteredWsManager = (): WebSocketManager | null => _wsManager;
 
 export const WS_EMIT_TYPING = 'ws/emitTyping' as const;
 export const WS_EMIT_MESSAGE = 'ws/emitMessage' as const;
+export const WS_EMIT_MARK_SEEN = 'ws/emitMarkSeen' as const;
 
 // ─── Action creators for outgoing events ──────────────────────────────────────
 
 export interface EmitTypingPayload {
+  conversationId: string;
+}
+
+export interface EmitMarkSeenPayload {
   conversationId: string;
 }
 
@@ -45,6 +50,13 @@ export const emitTypingAction = (
   payload: EmitTypingPayload,
 ): { type: typeof WS_EMIT_TYPING; payload: EmitTypingPayload } => ({
   type: WS_EMIT_TYPING,
+  payload,
+});
+
+export const emitMarkSeenAction = (
+  payload: EmitMarkSeenPayload,
+): { type: typeof WS_EMIT_MARK_SEEN; payload: EmitMarkSeenPayload } => ({
+  type: WS_EMIT_MARK_SEEN,
   payload,
 });
 
@@ -68,6 +80,12 @@ export const websocketMiddleware = ((
       return;
     }
 
+    // Outgoing mark seen — fire-and-forget, stop here
+    if (a.type === WS_EMIT_MARK_SEEN) {
+      _wsManager?.emit('markSeen', a.payload);
+      return;
+    }
+
     // Outgoing message emit — fire-and-forget, stop here
     if (a.type === WS_EMIT_MESSAGE) {
       _wsManager?.emit(CHAT_EVENTS.MESSAGE_SEND, a.payload);
@@ -78,3 +96,4 @@ export const websocketMiddleware = ((
     return next(a);
   }
 ) as unknown as Middleware);
+

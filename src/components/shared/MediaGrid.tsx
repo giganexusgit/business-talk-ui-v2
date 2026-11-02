@@ -132,18 +132,29 @@ function MediaLightbox({
  * prev/next navigation and keyboard support.
  */
 export function MediaGrid({ media }: MediaGridProps) {
+  const [failedUrls, setFailedUrls] = useState<Set<string>>(new Set())
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const closeLightbox = useCallback(() => setLightboxIndex(null), [])
 
-  if (!media || media.length === 0) return null
+  const markFailed = (url: string) => {
+    setFailedUrls(prev => {
+      const next = new Set(prev)
+      next.add(url)
+      return next
+    })
+  }
+
+  const validMedia = (media || []).filter(item => !failedUrls.has(item.url))
+
+  if (validMedia.length === 0) return null
 
   const open = (index: number, e: React.MouseEvent) => {
     e.stopPropagation()
     setLightboxIndex(index)
   }
 
-  const visible = media.slice(0, 4)
-  const overflow = media.length > 4 ? media.length - 4 : 0
+  const visible = validMedia.slice(0, 4)
+  const overflow = validMedia.length > 4 ? validMedia.length - 4 : 0
   const slots = overflow > 0 ? [...visible.slice(0, 3), visible[3]] : visible
 
   const renderSlot = (item: MediaItem, slotIndex: number, isOverflow: boolean) => (
@@ -160,6 +171,7 @@ export function MediaGrid({ media }: MediaGridProps) {
             muted
             playsInline
             preload="metadata"
+            onError={() => markFailed(item.url)}
           />
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="bg-black/50 rounded-full p-2.5">
@@ -172,6 +184,7 @@ export function MediaGrid({ media }: MediaGridProps) {
           src={item.url}
           alt={`media-${slotIndex + 1}`}
           className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
+          onError={() => markFailed(item.url)}
         />
       )}
       {isOverflow && (
@@ -182,7 +195,7 @@ export function MediaGrid({ media }: MediaGridProps) {
     </div>
   )
 
-  const count = media.length
+  const count = validMedia.length
 
   return (
     <>
@@ -202,6 +215,7 @@ export function MediaGrid({ media }: MediaGridProps) {
                 playsInline
                 preload="metadata"
                 style={{ maxHeight: 480 }}
+                onError={() => markFailed(slots[0].url)}
               />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="bg-black/50 rounded-full p-3">
@@ -215,6 +229,7 @@ export function MediaGrid({ media }: MediaGridProps) {
               alt="post media"
               className="w-full object-cover group-hover:opacity-95 transition-opacity"
               style={{ maxHeight: 480 }}
+              onError={() => markFailed(slots[0].url)}
             />
           )}
         </div>
@@ -249,7 +264,7 @@ export function MediaGrid({ media }: MediaGridProps) {
       {/* Lightbox */}
       {lightboxIndex !== null && (
         <MediaLightbox
-          media={media}
+          media={validMedia}
           initialIndex={lightboxIndex}
           onClose={closeLightbox}
         />

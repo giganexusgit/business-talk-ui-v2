@@ -8,6 +8,8 @@ import {
   clearTypingUser,
   wsUserOnline,
   wsUserOffline,
+  setOnlineUsers,
+  fetchPresence,
   fetchConversations,
 } from '@/redux/slices/chatSlice';
 import { registerWsManager } from '@/redux/middleware/websocketMiddleware';
@@ -19,10 +21,12 @@ import {
   deleteMessageFromCache,
 } from '@/hooks/useInfiniteMessages';
 import { CHAT_EVENTS } from '@/lib/chat/events';
+import type { MessageEntity } from '@/types/chat';
 import { normalizeMessage } from '@/lib/chat/normalizeMessage';
 import {
   parseWsMessagePayload,
   parseWsPresencePayload,
+  parseWsPresenceSyncPayload,
   parseWsTypingPayload,
 } from '@/lib/chat/websocketPayloads';
 import {
@@ -202,6 +206,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       if (shouldRefreshConversations) {
         store.dispatch(fetchConversations());
       }
+      // Always fetch latest presence on connect / reconnect
+      store.dispatch(fetchPresence());
 
       if (process.env.NODE_ENV === 'development') {
         console.log('[chat-realtime] socket connected', {
@@ -417,7 +423,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!data || typeof data !== 'object') return;
       const update = data as any;
       const conversationId = update.conversationId;
-      const messageId = update.id;
+      const messageId = update.messageId || update.id;
 
       if (!conversationId || !messageId) {
         if (process.env.NODE_ENV === 'development') {
@@ -428,13 +434,16 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Update message in React Query cache without refetch
       // Part 5: Stale-event guards in updateMessageInCache prevent duplicates
-      updateMessageInCache(queryClient, conversationId, {
+      const updatePayload: Partial<MessageEntity> & { id: string; updatedAt?: number } = {
         id: messageId,
-        status: update.status,
-        text: update.content,
-        isDeleted: update.isDeleted,
-        updatedAt: update.updatedAt,
-      });
+        ...(update.status !== undefined && { status: update.status }),
+        ...(update.content !== undefined && { text: update.content }),
+        ...(update.text !== undefined && { text: update.text }),
+        ...(update.isDeleted !== undefined && { isDeleted: update.isDeleted }),
+        ...(update.updatedAt !== undefined && { updatedAt: update.updatedAt }),
+      };
+
+      updateMessageInCache(queryClient, conversationId, updatePayload);
 
       // Part 6: Invalidate conversations for sidebar preview recalculation
       if (update.status || update.isDeleted) {
@@ -459,7 +468,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!data || typeof data !== 'object') return;
       const deletion = data as any;
       const conversationId = deletion.conversationId;
-      const messageId = deletion.id;
+      const messageId = deletion.messageId || deletion.id;
 
       if (!conversationId || !messageId) {
         if (process.env.NODE_ENV === 'development') {
@@ -515,6 +524,12 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       const payload = parseWsPresencePayload(data);
       if (!payload) return;
       store.dispatch(wsUserOffline(payload.userId));
+    }));
+
+    unsubscribers.push(ws.on(CHAT_EVENTS.PRESENCE_SYNC, (data: unknown) => {
+      const payload = parseWsPresenceSyncPayload(data);
+      if (!payload) return;
+      store.dispatch(setOnlineUsers(payload.onlineUserIds));
     }));
 
     // ── Incoming notification → Redux (req 7: no component-level WS listeners) ─

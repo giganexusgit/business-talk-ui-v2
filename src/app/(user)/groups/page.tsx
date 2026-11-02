@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import apiClient from '@/lib/api-client'
 import { validateImageFile } from '@/lib/utils'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 interface Group {
   id: string
@@ -23,6 +24,7 @@ interface Group {
 
 export default function GroupsPage() {
   const router = useRouter()
+  const requireAuth = useRequireAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<'all' | 'my-groups' | 'requested'>('all')
   const [groups, setGroups] = useState<Group[]>([])
@@ -186,6 +188,7 @@ export default function GroupsPage() {
   }
 
   const handleJoinToggle = async (groupId: string) => {
+    if (!requireAuth()) return
     const group = groups.find(g => g.id === groupId)
     if (!group) return
 
@@ -264,7 +267,10 @@ export default function GroupsPage() {
                 <span className="block truncate">Discover Groups</span>
               </button>
               <button
-                onClick={() => setActiveTab('my-groups')}
+                onClick={() => {
+                  if (!requireAuth()) return
+                  setActiveTab('my-groups')
+                }}
                 className="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg font-medium text-sm sm:text-base transition-all"
                 style={{
                   backgroundColor: activeTab === 'my-groups' ? '#212529' : '#F8F9FA',
@@ -284,7 +290,10 @@ export default function GroupsPage() {
                 <span className="block truncate">My Groups</span>
               </button>
               <button
-                onClick={() => setActiveTab('requested')}
+                onClick={() => {
+                  if (!requireAuth()) return
+                  setActiveTab('requested')
+                }}
                 className="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg font-medium text-sm sm:text-base transition-all flex items-center justify-center gap-1"
                 style={{
                   backgroundColor: activeTab === 'requested' ? '#212529' : '#F8F9FA',
@@ -316,7 +325,10 @@ export default function GroupsPage() {
               </button>
             </div>
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => {
+                if (!requireAuth()) return
+                setShowCreateModal(true)
+              }}
               className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all"
               style={{ backgroundColor: '#212529', color: '#FFFFFF' }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3D3D3D')}

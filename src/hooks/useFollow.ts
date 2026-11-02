@@ -124,7 +124,7 @@ export function useFollow(targetUserId: string, initialStatus?: ConnectionStatus
 
   const follow = useCallback(async () => {
     if (!requireAuth()) return
-    if (!isUUID(targetUserId) || actionState !== 'idle') return
+    if (!isUUID(targetUserId) || actionState !== 'idle' || (currentUserId && targetUserId === currentUserId)) return
 
     setError(null)
     setActionState('connecting')

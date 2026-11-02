@@ -167,15 +167,19 @@ export default function PostCard({ post }: any) {
                 <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-b">
                   💾 Save post
                 </button>
-                <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-b">
-                  👥 Disconnect
-                </button>
-                <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-b">
-                  👁️ Not interested
-                </button>
-                <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                  🚩 Report post
-                </button>
+                {(!currentUserId || currentUserId !== postAuthorId) && (
+                  <>
+                    <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-b">
+                      👥 Disconnect
+                    </button>
+                    <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-b">
+                      👁️ Not interested
+                    </button>
+                    <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                      🚩 Report post
+                    </button>
+                  </>
+                )}
                 {currentUserId && currentUserId === postAuthorId && (
                   <button
                     onClick={handleDeletePost}

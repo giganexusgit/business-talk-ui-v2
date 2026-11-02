@@ -164,6 +164,7 @@ export function StoryPost({
     }
   }
   const reduxUser = useAppSelector((state: any) => state.auth.user)
+  const isOwnStory = Boolean((currentUserId || reduxUser?.id) && authorId && String(currentUserId || reduxUser?.id) === String(authorId))
 
   // ✅ HOOKS (STANDARDIZED)
   const { comments, addComment, likeComment, isLikingComment, deleteComment } = useStoryComments(id)
@@ -540,12 +541,12 @@ export function StoryPost({
             </div>
           </div>
           <div ref={actionMenuRef} className="relative">
-            <button onClick={() => setShowActionMenu(!showActionMenu)}>
-              <MoreVertical />
+            <button onClick={() => setShowActionMenu(!showActionMenu)} className="text-gray-400 hover:text-gray-600 p-1 transition">
+              <MoreVertical className="w-5 h-5" />
             </button>
 
             {showActionMenu && (
-              <div className="absolute right-0 bg-white border rounded shadow p-2 flex gap-1">
+              <div className="absolute right-0 mt-1 bg-white border rounded-lg shadow-lg z-10 px-3 py-2 flex items-center gap-1 whitespace-nowrap">
                 <button
                   onClick={handleSave}
                   className="group p-2 rounded transition-all duration-200 flex items-center gap-1 text-xs hover:bg-gray-100 hover:gap-2"
@@ -564,52 +565,56 @@ export function StoryPost({
                     {isSaved ? 'Unsave' : 'Save'}
                   </span>
                 </button>
-                <button
-                  onClick={followState === 'connected' ? unfollow : follow}
-                  disabled={isBanned}
-                  className="group p-2 rounded transition flex items-center gap-1 text-xs hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ color: '#374151' }}
-                  title={
-                    followState === 'connected'
-                      ? 'Disconnect'
-                      : followState === 'pending'
-                      ? 'Requested'
-                      : 'Connect'
-                  }
-                >
-                  {/* Icon based on state */}
-                  {followState === 'connected' ? (
-                    <UserCheck className="w-4 h-4" />
-                  ) : followState === 'pending' ? (
-                    <UserMinus className="w-4 h-4" />
-                  ) : (
-                    <UserPlus className="w-4 h-4" />
-                  )}
+                {!isOwnStory && (
+                  <>
+                    <button
+                      onClick={followState === 'connected' ? unfollow : follow}
+                      disabled={isBanned}
+                      className="group p-2 rounded transition flex items-center gap-1 text-xs hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ color: '#374151' }}
+                      title={
+                        followState === 'connected'
+                          ? 'Disconnect'
+                          : followState === 'pending'
+                          ? 'Requested'
+                          : 'Connect'
+                      }
+                    >
+                      {/* Icon based on state */}
+                      {followState === 'connected' ? (
+                        <UserCheck className="w-4 h-4" />
+                      ) : followState === 'pending' ? (
+                        <UserMinus className="w-4 h-4" />
+                      ) : (
+                        <UserPlus className="w-4 h-4" />
+                      )}
 
-                  {/* Text appears only on hover */}
-                  <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
-                    {followState === 'connected'
-                      ? 'Disconnect'
-                      : followState === 'pending'
-                      ? 'Requested'
-                      : 'Connect'}
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowReportModal(true)
-                    setShowActionMenu(false)
-                  }}
-                  title='Report'
-                  className="group flex items-center gap-1 text-red-600 hover:bg-gray-100 px-2 py-1 rounded transition-all duration-200 hover:gap-2"
-                >
-                  <Flag className="w-4 h-4" />
+                      {/* Text appears only on hover */}
+                      <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
+                        {followState === 'connected'
+                          ? 'Disconnect'
+                          : followState === 'pending'
+                          ? 'Requested'
+                          : 'Connect'}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowReportModal(true)
+                        setShowActionMenu(false)
+                      }}
+                      title='Report'
+                      className="group flex items-center gap-1 text-red-600 hover:bg-gray-100 px-2 py-1 rounded transition-all duration-200 hover:gap-2"
+                    >
+                      <Flag className="w-4 h-4" />
 
-                  <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
-                    Report
-                  </span>
-                </button>
-                {currentUserId && currentUserId === authorId && (
+                      <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] transition-all duration-200 whitespace-nowrap">
+                        Report
+                      </span>
+                    </button>
+                  </>
+                )}
+                {isOwnStory && (
                   <>
                     <button
                       onClick={() => {
@@ -727,16 +732,20 @@ export function StoryPost({
           </div>
 
           <button
-            onClick={() =>
+            onClick={() => {
+              if (!requireAuth()) return
               setShowComments(!showComments)
-            }
+            }}
           >
             <MessageCircle className="w-4 h-4 inline" />{' '}
             {nestedComments.length}
           </button>
 
           <button
-            onClick={() => setShowShareModal(true)}
+            onClick={() => {
+              if (!requireAuth()) return
+              setShowShareModal(true)
+            }}
             className="ml-auto"
           >
             <Send />

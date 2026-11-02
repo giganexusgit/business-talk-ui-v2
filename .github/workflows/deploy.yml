@@ -55,7 +55,7 @@ jobs:
           username: ${{ secrets.HOSTINGER_USERNAME }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           port: ${{ secrets.HOSTINGER_PORT || 22 }}
-          script_stop: true
+          script_stop: false
           script: |
             echo "🚀 Navigating to application directory: ${{ secrets.HOSTINGER_APP_PATH }}"
             cd ${{ secrets.HOSTINGER_APP_PATH }}
@@ -71,11 +71,7 @@ jobs:
             npm run build
 
             echo "🔄 Restarting UI via PM2..."
-            if pm2 describe business-talk-ui > /dev/null 2>&1; then
-              pm2 reload ecosystem.config.js --env production
-            else
-              pm2 start ecosystem.config.js --env production
-            fi
+            pm2 restart business-talk-ui-v2 --update-env || pm2 restart 1 --update-env
 
             pm2 save
             echo "✅ Frontend deployment finished successfully!"

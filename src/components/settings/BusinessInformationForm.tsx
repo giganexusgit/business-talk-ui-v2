@@ -140,9 +140,15 @@ export default function BusinessInformationForm({ initial, onSaved }: Props) {
 
       const res = await apiClient.updateProfile(data)
       const user = res.data?.user || res.data
-      setSuccess('Business profile saved. Your account is now a business account.')
+      setSuccess(
+        isBusiness
+          ? 'Business profile updated successfully!'
+          : 'Business profile saved. Your account is now a business account.'
+      )
       setLogoFile(null)
       setGalleryFiles([])
+      if (user?.business_logo) setLogoPreview(user.business_logo)
+      if (user?.business_gallery) setGalleryUrls(parseGalleryList(user.business_gallery))
       onSaved?.(user)
     } catch (err: any) {
       const raw = err?.response?.data?.message

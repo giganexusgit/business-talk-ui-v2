@@ -205,6 +205,20 @@ export function useProfile() {
 
   useEffect(() => {
     fetchAll()
+
+    const onProfileUpdated = () => {
+      fetchAll()
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('profile-updated', onProfileUpdated)
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('profile-updated', onProfileUpdated)
+      }
+    }
   }, [fetchAll])
 
   return {

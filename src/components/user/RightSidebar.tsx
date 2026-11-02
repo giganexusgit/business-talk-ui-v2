@@ -3,7 +3,7 @@
 import { TrendingUp, Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useContentViewerContext } from '@/providers/ContentViewerProvider'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { profileHref } from '@/lib/profile-link'
 import apiClient from '@/lib/api-client'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
@@ -294,18 +294,25 @@ export function RightSidebar() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [peopleRes, groupsRes, storiesRes, hotRes] = await Promise.all([
-          apiClient.getFollowSuggestions(),
-          apiClient.getGroupSuggestions(5),
-          apiClient.getTrendingStories(),
-          apiClient.getTrendingPosts(),
-        ]);
-        setPeople((peopleRes.data || []).slice(0, 5));
+  const fetchData = useCallback(async () => {
+    try {
+      const isGuest =
+        typeof window !== 'undefined' && !localStorage.getItem('user');
 
-        const formattedGroups: SuggestedGroup[] = (groupsRes.data || []).map((g: any) => ({
+      const [peopleResult, groupsResult, storiesResult, hotResult] = await Promise.allSettled([
+        isGuest ? Promise.resolve({ data: [] }) : apiClient.getFollowSuggestions(),
+        isGuest ? Promise.resolve({ data: [] }) : apiClient.getGroupSuggestions(5),
+        apiClient.getTrendingStories(),
+        apiClient.getTrendingPosts(),
+      ]);
+
+      if (peopleResult.status === 'fulfilled') {
+        setPeople((peopleResult.value.data || []).slice(0, 5));
+      }
+
+      let formattedGroups: SuggestedGroup[] = [];
+      if (groupsResult.status === 'fulfilled') {
+        formattedGroups = (groupsResult.value.data || []).map((g: any) => ({
           id: g.id,
           name: g.name,
           description: g.description,
@@ -317,31 +324,81 @@ export function RightSidebar() {
           joined: false,
           hasPendingRequest: Boolean(g.hasPendingRequest),
         }));
-
         setGroups(formattedGroups.slice(0, 5));
-        const sortedStories = (storiesRes.data || []).sort(
-          (a: any, b: any) => new Date(b.created_on).getTime() - new Date(a.created_on).getTime()
-        );
-        setStories(sortedStories.slice(0, 5));
-        const hotPosts = hotRes.data || [];
-        const questionPosts = hotPosts
-          .filter((p: any) => (p.post_type || p.type)?.toUpperCase() === 'QUESTION')
-          .sort((a: any, b: any) => (b.hot_score || 0) - (a.hot_score || 0));
-        setQuestions(questionPosts.slice(0, 5));
         setJoinStates(
           formattedGroups.reduce((acc: any, g: SuggestedGroup) => {
             acc[g.id] = g.hasPendingRequest ? 'requested' : 'join';
             return acc;
           }, {})
         );
-      } catch (err) {
-        // silent
-      } finally {
-        setLoading(false);
       }
-    };
-    fetchData();
+
+      if (storiesResult.status === 'fulfilled') {
+        let sortedStories = (storiesResult.value.data || []).sort(
+          (a: any, b: any) => new Date(b.created_on).getTime() - new Date(a.created_on).getTime()
+        );
+        if (sortedStories.length === 0) {
+          try {
+            const allStoriesRes = await apiClient.getStories(1, 10);
+            const allStoriesData = (allStoriesRes.data?.data || allStoriesRes.data || []).filter(
+              (b: any) => b.type === 'STORY'
+            );
+            sortedStories = allStoriesData.sort(
+              (a: any, b: any) => new Date(b.created_on).getTime() - new Date(a.created_on).getTime()
+            );
+          } catch {}
+        }
+        setStories(sortedStories.slice(0, 5));
+      }
+
+      let questionPosts: any[] = [];
+      if (hotResult.status === 'fulfilled') {
+        const hotPosts = hotResult.value.data || [];
+        questionPosts = hotPosts
+          .filter((p: any) => (p.post_type || p.type)?.toUpperCase() === 'QUESTION')
+          .sort(
+            (a: any, b: any) =>
+              (b.trendingScore || b.hot_score || 0) - (a.trendingScore || a.hot_score || 0) ||
+              Number(b.created_on || 0) - Number(a.created_on || 0)
+          );
+      }
+
+      // Fallback: If no questions found via trending, fetch recent questions
+      if (questionPosts.length === 0) {
+        try {
+          const allRes = await apiClient.getAllPosts(1, 10);
+          const allData = allRes.data?.data || allRes.data || [];
+          questionPosts = allData
+            .filter((p: any) => (p.post_type || p.type)?.toUpperCase() === 'QUESTION')
+            .sort((a: any, b: any) => Number(b.created_on || 0) - Number(a.created_on || 0));
+        } catch {}
+      }
+
+      setQuestions(questionPosts.slice(0, 5));
+    } catch (err) {
+      // silent
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+
+    const handleRefresh = () => {
+      fetchData();
+    };
+
+    window.addEventListener('post-created', handleRefresh);
+    window.addEventListener('question-created', handleRefresh);
+    window.addEventListener('story-created', handleRefresh);
+
+    return () => {
+      window.removeEventListener('post-created', handleRefresh);
+      window.removeEventListener('question-created', handleRefresh);
+      window.removeEventListener('story-created', handleRefresh);
+    };
+  }, [fetchData]);
 
   // --- HANDLERS ---
   const handleTrendingClick = (type: 'questions' | 'stories') => (item: any) => {

@@ -16,6 +16,7 @@ import { useState, useEffect } from 'react'
 import apiClient from '@/lib/api-client'
 import PasswordInput from '@/components/common/PasswordInput'
 import { validateImageFile } from '@/lib/utils'
+import { setUser } from '@/redux/slices/authSlice'
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux'
 import {
   requestPushPermission,
@@ -663,6 +664,7 @@ function NotificationsTab({
   );
 }
 export default function AdminSettingsPage() {
+  const dispatch = useAppDispatch()
 
   const [activeTab, setActiveTab] = useState('profile')
 
@@ -681,12 +683,12 @@ export default function AdminSettingsPage() {
   const [profileSkills, setProfileSkills] = useState<string[]>([])
 
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
-
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoRemoved, setPhotoRemoved] = useState(false)
 
   const [coverImage, setCoverImage] = useState<File | null>(null)
-
   const [coverPreview, setCoverPreview] = useState<string | null>(null)
+  const [coverRemoved, setCoverRemoved] = useState(false)
 
   const [profileSection, setProfileSection] = useState<'basic' | 'business'>('basic')
   const [accountType, setAccountType] = useState<string>(ACCOUNT_TYPE.PROFESSIONAL)
@@ -834,6 +836,13 @@ export default function AdminSettingsPage() {
       })
       if (d.account_type === ACCOUNT_TYPE.BUSINESS) setProfileSection('business')
 
+      try {
+        const current = JSON.parse(localStorage.getItem('user') || '{}')
+        const merged = { ...current, ...d }
+        localStorage.setItem('user', JSON.stringify(merged))
+        dispatch(setUser(merged))
+      } catch {}
+
     }).catch(() => setError('Failed to load profile'))
 
       .finally(() => setLoading(false))
@@ -843,63 +852,75 @@ export default function AdminSettingsPage() {
 
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-
     const file = e.target.files?.[0]; if (!file) return
-
     const err = validateImageFile(file); if (err) { alert(err); return }
-
     setProfilePhoto(file)
-
+    setPhotoRemoved(false)
     const r = new FileReader(); r.onload = ev => setPhotoPreview(ev.target?.result as string); r.readAsDataURL(file)
-
+    e.target.value = ''
   }
 
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-
     const file = e.target.files?.[0]; if (!file) return
-
     const err = validateImageFile(file); if (err) { alert(err); return }
-
     setCoverImage(file)
-
+    setCoverRemoved(false)
     const r = new FileReader(); r.onload = ev => setCoverPreview(ev.target?.result as string); r.readAsDataURL(file)
-
+    e.target.value = ''
   }
 
 
 
   const handleSaveProfile = async () => {
-
     setSaving(true); setError(''); setSuccess('')
-
     try {
-
       const form = new FormData()
+      if (profilePhoto) {
+        form.append('profile_photo', profilePhoto)
+      } else if (photoRemoved) {
+        form.append('profile_photo', '')
+      }
 
-      if (profilePhoto) form.append('profile_photo', profilePhoto)
+      if (coverImage) {
+        form.append('cover_image', coverImage)
+      } else if (coverRemoved) {
+        form.append('cover_image', '')
+      }
 
-      if (coverImage)   form.append('cover_image', coverImage)
-
-      Object.entries(profile).forEach(([k, v]) => { if (v) form.append(k, v) })
-
-      profileSkills.forEach(s => form.append('skills', s))
-
+      Object.entries(profile).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) form.append(k, String(v))
+      })
+      if (accountType) form.append('account_type', accountType)
+      form.append('skills', JSON.stringify(profileSkills))
       form.append('experience', JSON.stringify(experiences))
-
       form.append('education',  JSON.stringify(educations))
 
-      await apiClient.updateProfile(form)
-
+      const res = await apiClient.updateProfile(form)
       setSuccess('Profile updated successfully!')
+      setProfilePhoto(null); setCoverImage(null); setPhotoRemoved(false); setCoverRemoved(false)
 
-      setProfilePhoto(null); setCoverImage(null)
-
+      const updatedUser = res.data?.user || res.data
+      if (updatedUser) {
+        if ('cover_image' in updatedUser) {
+          setCoverPreview(updatedUser.cover_image || null)
+        }
+        if ('profile_photo' in updatedUser) {
+          setPhotoPreview(updatedUser.profile_photo || null)
+        }
+        try {
+          const current = JSON.parse(localStorage.getItem('user') || '{}')
+          const merged = { ...current, ...updatedUser }
+          localStorage.setItem('user', JSON.stringify(merged))
+          dispatch(setUser(merged))
+        } catch {}
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('profile-updated', { detail: updatedUser }))
+        }
+      }
     } catch (err: any) {
-
-      setError(err?.message || 'Failed to update profile')
-
+      const msg = err.response?.data?.message || err?.message || 'Failed to update profile'
+      setError(Array.isArray(msg) ? msg.join(', ') : msg)
     } finally { setSaving(false) }
-
   }
 
 
@@ -1076,6 +1097,17 @@ export default function AdminSettingsPage() {
                         business_products_services: user?.business_products_services || '',
                         business_gallery: user?.business_gallery || [],
                       })
+                      if (user) {
+                        try {
+                          const current = JSON.parse(localStorage.getItem('user') || '{}')
+                          const merged = { ...current, ...user }
+                          localStorage.setItem('user', JSON.stringify(merged))
+                          dispatch(setUser(merged))
+                        } catch {}
+                        if (typeof window !== 'undefined') {
+                          window.dispatchEvent(new CustomEvent('profile-updated', { detail: user }))
+                        }
+                      }
                       if (nextType === ACCOUNT_TYPE.PROFESSIONAL) setProfileSection('basic')
                     }}
                   />
@@ -1116,16 +1148,11 @@ export default function AdminSettingsPage() {
 
                   </label>
 
-                  {coverImage && (
-
-                    <button type="button" onClick={() => { setCoverImage(null); setCoverPreview(null) }}
-
+                  {coverPreview && (
+                    <button type="button" onClick={() => { setCoverImage(null); setCoverPreview(null); setCoverRemoved(true) }}
                       className="mt-2 text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
-
                       <X className="w-3 h-3" /> Remove
-
                     </button>
-
                   )}
 
                 </div>
@@ -1164,16 +1191,11 @@ export default function AdminSettingsPage() {
 
                       </label>
 
-                      {profilePhoto && (
-
-                        <button type="button" onClick={() => { setProfilePhoto(null); setPhotoPreview(null) }}
-
+                      {photoPreview && (
+                        <button type="button" onClick={() => { setProfilePhoto(null); setPhotoPreview(null); setPhotoRemoved(true) }}
                           className="mt-1 text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
-
                           <X className="w-3 h-3" /> Remove
-
                         </button>
-
                       )}
 
                     </div>

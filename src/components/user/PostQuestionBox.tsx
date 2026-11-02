@@ -64,6 +64,10 @@ export function PostQuestionBox() {
       setQuestionText('')
       setTags([])
       await queryClient.invalidateQueries({ queryKey: ['feed'] })
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('post-created'))
+        window.dispatchEvent(new CustomEvent('question-created'))
+      }
     } catch (err) {
       console.error('Question post failed:', err)
     } finally {

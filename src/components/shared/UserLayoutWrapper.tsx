@@ -89,7 +89,7 @@ export const UserLayoutWrapper = ({ children }: UserLayoutWrapperProps) => {
 
         const trendingPosts = hotRes.data || []
 
-        const questionPosts = trendingPosts
+                let questionPosts = trendingPosts
           .filter(
             (p: any) =>
               (p.post_type || p.type)?.toUpperCase() ===
@@ -97,9 +97,20 @@ export const UserLayoutWrapper = ({ children }: UserLayoutWrapperProps) => {
           )
           .sort(
             (a: any, b: any) =>
-              (b.hot_score || 0) -
-              (a.hot_score || 0)
+              (b.trendingScore || b.hot_score || 0) -
+              (a.trendingScore || a.hot_score || 0) ||
+              Number(b.created_on || 0) - Number(a.created_on || 0)
           )
+
+        if (questionPosts.length === 0) {
+          try {
+            const allRes = await apiClient.getAllPosts(1, 10);
+            const allData = allRes.data?.data || allRes.data || [];
+            questionPosts = allData
+              .filter((p: any) => (p.post_type || p.type)?.toUpperCase() === 'QUESTION')
+              .sort((a: any, b: any) => Number(b.created_on || 0) - Number(a.created_on || 0));
+          } catch {}
+        }
 
         setQuestions(questionPosts.slice(0, 5))
       } catch (err) {
@@ -109,6 +120,24 @@ export const UserLayoutWrapper = ({ children }: UserLayoutWrapperProps) => {
       }
     }
     fetchData()
+
+    const handleRefresh = () => {
+      fetchData()
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('post-created', handleRefresh)
+      window.addEventListener('question-created', handleRefresh)
+      window.addEventListener('story-created', handleRefresh)
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('post-created', handleRefresh)
+        window.removeEventListener('question-created', handleRefresh)
+        window.removeEventListener('story-created', handleRefresh)
+      }
+    }
   }, [router])
 
   return (

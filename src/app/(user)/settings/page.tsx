@@ -26,7 +26,7 @@ import {
 import { isPushSupported, getPushPermissionState } from '@/lib/fcm'
 import PushDevicesPanel from '@/components/user/PushDevicesPanel'
 import PasswordInput from '@/components/common/PasswordInput'
-import { logout } from '@/redux/slices/authSlice'
+import { logout, setUser } from '@/redux/slices/authSlice'
 import BusinessInformationForm from '@/components/settings/BusinessInformationForm'
 import { ACCOUNT_TYPE, BusinessProfileFields } from '@/lib/business-profile'
 
@@ -689,16 +689,17 @@ export default function SettingsPage() {
   const [profileSkills, setProfileSkills] = useState<string[]>([])
 
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
-
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoRemoved, setPhotoRemoved] = useState(false)
 
   const [coverImage, setCoverImage] = useState<File | null>(null)
-
   const [coverPreview, setCoverPreview] = useState<string | null>(null)
+  const [coverRemoved, setCoverRemoved] = useState(false)
 
   const [profileSection, setProfileSection] = useState<'basic' | 'business'>('basic')
   const [accountType, setAccountType] = useState<string>(ACCOUNT_TYPE.PROFESSIONAL)
   const [businessInitial, setBusinessInitial] = useState<BusinessProfileFields>({})
+  const [switchingAccountType, setSwitchingAccountType] = useState(false)
 
 
 
@@ -819,6 +820,13 @@ export default function SettingsPage() {
       })
       if (d.account_type === ACCOUNT_TYPE.BUSINESS) setProfileSection('business')
 
+      try {
+        const current = JSON.parse(localStorage.getItem('user') || '{}')
+        const merged = { ...current, ...d }
+        localStorage.setItem('user', JSON.stringify(merged))
+        dispatch(setUser(merged))
+      } catch {}
+
     }).catch(() => setError('Failed to load profile'))
 
       .finally(() => setLoading(false))
@@ -828,63 +836,108 @@ export default function SettingsPage() {
 
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-
     const file = e.target.files?.[0]; if (!file) return
-
     const err = validateImageFile(file); if (err) { alert(err); return }
-
     setProfilePhoto(file)
-
+    setPhotoRemoved(false)
     const r = new FileReader(); r.onload = ev => setPhotoPreview(ev.target?.result as string); r.readAsDataURL(file)
-
+    e.target.value = ''
   }
 
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-
     const file = e.target.files?.[0]; if (!file) return
-
     const err = validateImageFile(file); if (err) { alert(err); return }
-
     setCoverImage(file)
-
+    setCoverRemoved(false)
     const r = new FileReader(); r.onload = ev => setCoverPreview(ev.target?.result as string); r.readAsDataURL(file)
-
+    e.target.value = ''
   }
 
 
 
-  const handleSaveProfile = async () => {
-
-    setSaving(true); setError(''); setSuccess('')
-
+  const handleSwitchToProfessional = async () => {
+    setSwitchingAccountType(true)
+    setError('')
+    setSuccess('')
     try {
+      const data = new FormData()
+      data.append('account_type', ACCOUNT_TYPE.PROFESSIONAL)
+      const res = await apiClient.updateProfile(data)
+      const user = res.data?.user || res.data
+      setAccountType(ACCOUNT_TYPE.PROFESSIONAL)
+      setBusinessInitial((prev) => ({
+        ...prev,
+        account_type: ACCOUNT_TYPE.PROFESSIONAL,
+      }))
+      setSuccess('Account switched back to basic (professional) profile.')
+      if (user) {
+        try {
+          const current = JSON.parse(localStorage.getItem('user') || '{}')
+          const merged = { ...current, ...user, account_type: ACCOUNT_TYPE.PROFESSIONAL }
+          localStorage.setItem('user', JSON.stringify(merged))
+          dispatch(setUser(merged))
+        } catch {}
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('profile-updated', { detail: user }))
+        }
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Failed to switch account type')
+    } finally {
+      setSwitchingAccountType(false)
+    }
+  }
 
+  const handleSaveProfile = async () => {
+    setSaving(true); setError(''); setSuccess('')
+    try {
       const form = new FormData()
+      if (profilePhoto) {
+        form.append('profile_photo', profilePhoto)
+      } else if (photoRemoved) {
+        form.append('profile_photo', '')
+      }
 
-      if (profilePhoto) form.append('profile_photo', profilePhoto)
+      if (coverImage) {
+        form.append('cover_image', coverImage)
+      } else if (coverRemoved) {
+        form.append('cover_image', '')
+      }
 
-      if (coverImage)   form.append('cover_image', coverImage)
-
-      Object.entries(profile).forEach(([k, v]) => { if (v) form.append(k, v) })
-
-      profileSkills.forEach(s => form.append('skills', s))
-
+      Object.entries(profile).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) form.append(k, String(v))
+      })
+      if (accountType) form.append('account_type', accountType)
+      form.append('skills', JSON.stringify(profileSkills))
       form.append('experience', JSON.stringify(experiences))
-
       form.append('education',  JSON.stringify(educations))
 
-      await apiClient.updateProfile(form)
-
+      const res = await apiClient.updateProfile(form)
       setSuccess('Profile updated successfully!')
+      setProfilePhoto(null); setCoverImage(null); setPhotoRemoved(false); setCoverRemoved(false)
 
-      setProfilePhoto(null); setCoverImage(null)
-
+      const updatedUser = res.data?.user || res.data
+      if (updatedUser) {
+        if ('cover_image' in updatedUser) {
+          setCoverPreview(updatedUser.cover_image || null)
+        }
+        if ('profile_photo' in updatedUser) {
+          setPhotoPreview(updatedUser.profile_photo || null)
+        }
+        try {
+          const current = JSON.parse(localStorage.getItem('user') || '{}')
+          const merged = { ...current, ...updatedUser }
+          localStorage.setItem('user', JSON.stringify(merged))
+          dispatch(setUser(merged))
+        } catch {}
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('profile-updated', { detail: updatedUser }))
+        }
+      }
     } catch (err: any) {
-
-      setError(err?.message || 'Failed to update profile')
-
+      const msg = err.response?.data?.message || err?.message || 'Failed to update profile'
+      setError(Array.isArray(msg) ? msg.join(', ') : msg)
     } finally { setSaving(false) }
-
   }
 
 
@@ -1087,7 +1140,27 @@ export default function SettingsPage() {
                 </div>
 
                 {accountType === ACCOUNT_TYPE.BUSINESS && profileSection === 'basic' && (
-                  <p className="text-xs text-gray-500">This account is currently shown as a business profile. Open Business Information to update it or switch back.</p>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                    <div>
+                      <p className="text-sm font-semibold text-amber-900">Current Account Type: Business</p>
+                      <p className="text-xs text-amber-700">Your profile is currently displayed as a business profile. Switch to basic (professional) to show your personal information instead.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSwitchToProfessional}
+                      disabled={switchingAccountType}
+                      className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition shadow-sm disabled:opacity-60 shrink-0"
+                    >
+                      {switchingAccountType ? 'Switching...' : 'Switch to Basic Profile'}
+                    </button>
+                  </div>
+                )}
+
+                {accountType === ACCOUNT_TYPE.PROFESSIONAL && profileSection === 'basic' && (
+                  <div className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>Active Account Type: <strong>Basic (Professional)</strong></span>
+                  </div>
                 )}
 
                 {profileSection === 'business' ? (
@@ -1111,6 +1184,17 @@ export default function SettingsPage() {
                         business_products_services: user?.business_products_services || '',
                         business_gallery: user?.business_gallery || [],
                       })
+                      if (user) {
+                        try {
+                          const current = JSON.parse(localStorage.getItem('user') || '{}')
+                          const merged = { ...current, ...user }
+                          localStorage.setItem('user', JSON.stringify(merged))
+                          dispatch(setUser(merged))
+                        } catch {}
+                        if (typeof window !== 'undefined') {
+                          window.dispatchEvent(new CustomEvent('profile-updated', { detail: user }))
+                        }
+                      }
                       if (nextType === ACCOUNT_TYPE.PROFESSIONAL) setProfileSection('basic')
                     }}
                   />
@@ -1151,16 +1235,11 @@ export default function SettingsPage() {
 
                   </label>
 
-                  {coverImage && (
-
-                    <button type="button" onClick={() => { setCoverImage(null); setCoverPreview(null) }}
-
+                  {coverPreview && (
+                    <button type="button" onClick={() => { setCoverImage(null); setCoverPreview(null); setCoverRemoved(true) }}
                       className="mt-2 text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
-
                       <X className="w-3 h-3" /> Remove
-
                     </button>
-
                   )}
 
                 </div>
@@ -1199,16 +1278,11 @@ export default function SettingsPage() {
 
                       </label>
 
-                      {profilePhoto && (
-
-                        <button type="button" onClick={() => { setProfilePhoto(null); setPhotoPreview(null) }}
-
+                      {photoPreview && (
+                        <button type="button" onClick={() => { setProfilePhoto(null); setPhotoPreview(null); setPhotoRemoved(true) }}
                           className="mt-1 text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
-
                           <X className="w-3 h-3" /> Remove
-
                         </button>
-
                       )}
 
                     </div>

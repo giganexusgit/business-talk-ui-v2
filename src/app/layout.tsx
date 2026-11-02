@@ -3,8 +3,8 @@ import '@/app/globals.css'
 import { Providers } from '@/app/providers'
 
 export const metadata: Metadata = {
-  title: 'Businesstalk24 - Professional Networking Platform',
-  description: 'Connect, collaborate, and grow your business with Businesstalk24',
+  title: 'Businesstalk24 – Knowledge Sharing & Community Platform',
+  description: 'Businesstalk24 is a knowledge-sharing community where people and businesses connect, ask questions, share ideas, publish content and discover opportunities.',
   keywords: 'networking, business, professional, collaboration',
   authors: [{ name: 'Businesstalk24' }],
   icons: {

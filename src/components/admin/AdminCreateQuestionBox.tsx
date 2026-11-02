@@ -30,6 +30,10 @@ export function AdminCreateQuestionBox({ onCreated }: { onCreated?: () => void }
       setTags([])
       await queryClient.invalidateQueries({ queryKey: ['admin-questions'] })
       await queryClient.invalidateQueries({ queryKey: ['feed'] })
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('post-created'))
+        window.dispatchEvent(new CustomEvent('question-created'))
+      }
       onCreated?.()
     } catch (err) {
       console.error(err)

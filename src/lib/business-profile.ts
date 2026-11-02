@@ -119,14 +119,21 @@ export function publicProfileFromUser(p: any) {
     about: business ? p.business_about || p.about || p.short_bio : p.about || p.short_bio,
     experience: p.experience,
     education: p.education,
+    skills: Array.isArray(p.skills)
+      ? p.skills
+      : typeof p.skills === 'string'
+      ? p.skills.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : [],
+    short_bio: p.short_bio,
+    profession: p.profession,
     account_type: p.account_type || ACCOUNT_TYPE.PROFESSIONAL,
     isBusiness: business,
-    business_website: p.business_website,
-    business_address: p.business_address,
-    business_products_services: p.business_products_services,
-    business_gallery: parseGalleryList(p.business_gallery),
-    business_established_year: p.business_established_year,
-    business_type: p.business_type,
-    business_category: p.business_category,
+    business_website: business ? p.business_website : undefined,
+    business_address: business ? p.business_address : undefined,
+    business_products_services: business ? p.business_products_services : undefined,
+    business_gallery: business ? parseGalleryList(p.business_gallery) : [],
+    business_established_year: business ? p.business_established_year : undefined,
+    business_type: business ? p.business_type : undefined,
+    business_category: business ? p.business_category : undefined,
   }
 }

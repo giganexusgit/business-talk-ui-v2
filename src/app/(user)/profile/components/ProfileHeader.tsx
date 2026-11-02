@@ -36,8 +36,9 @@ export function ProfileHeader({
   const [hoveringConnected, setHoveringConnected] = useState(false)
   const [hoveringPending, setHoveringPending] = useState(false)
 
-  const avatarSrc = profileData.avatar || `https://ui-avatars.com/api/name=${encodeURIComponent(profileData.name || profileData.username || 'User')}`
-  const coverSrc = profileData.cover_image || `https://ui-avatars.com/api/name=${encodeURIComponent(profileData.name || profileData.username || 'User')}`
+  const hasCover = Boolean(profileData?.cover_image)
+  const coverSrc = profileData?.cover_image || ''
+  const avatarSrc = profileData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.name || profileData.username || 'User')}&background=0D8ABC&color=fff`
 
   const closePreview = () => {
     setPreviewImage(null)
@@ -46,6 +47,7 @@ export function ProfileHeader({
   }
 
   const openPreview = (type: 'avatar' | 'cover') => {
+    if (type === 'cover' && !hasCover) return
     setPreviewType(type)
     setPreviewImage(type === 'avatar' ? avatarSrc : coverSrc)
     setImageLoading(true)
@@ -105,23 +107,27 @@ export function ProfileHeader({
 
       {/* COVER */}
       <div className="relative">
-        <button
-          type="button"
-          onClick={() => openPreview('cover')}
-          className="group relative block w-full cursor-zoom-in"
-          aria-label="Open cover image preview"
-        >
-          <img
-            src={coverSrc}
-            alt="Cover"
-            className="w-full h-28 sm:h-40 md:h-48 object-cover"
-          />
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 transition-all duration-200 group-hover:bg-black/30">
-            <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-gray-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-              View Cover
-            </span>
-          </div>
-        </button>
+        {hasCover ? (
+          <button
+            type="button"
+            onClick={() => openPreview('cover')}
+            className="group relative block w-full cursor-zoom-in"
+            aria-label="Open cover image preview"
+          >
+            <img
+              src={coverSrc}
+              alt="Cover"
+              className="w-full h-28 sm:h-40 md:h-48 object-cover"
+            />
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 transition-all duration-200 group-hover:bg-black/30">
+              <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-gray-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                View Cover
+              </span>
+            </div>
+          </button>
+        ) : (
+          <div className="w-full h-28 sm:h-40 md:h-48 bg-gradient-to-r from-slate-700 via-gray-800 to-zinc-900" />
+        )}
       </div>
 
       <div className="px-4 sm:px-6 pb-5 sm:pb-6">
@@ -146,15 +152,17 @@ export function ProfileHeader({
           </button>
 
           <div className="flex-1 min-w-0 mt-10 sm:mt-12 md:mt-16">
-            <h1 className="text-xl sm:text-2xl font-semibold truncate inline-flex items-center gap-2">
-              {profileData.name}
+            <div className="flex items-center gap-2.5 max-w-full">
+              <h1 className="text-xl sm:text-2xl font-semibold truncate text-[#212529]">
+                {profileData.name}
+              </h1>
               {profileData.isBusiness && (
-                <span className="shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full bg-gray-900 text-white">
+                <span className="shrink-0 inline-flex items-center text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-gray-900 text-white leading-normal shadow-sm">
                   Business
                 </span>
               )}
-            </h1>
-            <p className="text-gray-500 text-sm sm:text-base truncate">{profileData.title}</p>
+            </div>
+            <p className="text-gray-500 text-sm sm:text-base truncate mt-0.5">{profileData.title}</p>
 
             <div className="flex flex-wrap gap-3 text-xs sm:text-sm text-gray-400 mt-2">
               <span className="flex gap-1 items-center">

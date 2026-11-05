@@ -4,12 +4,21 @@ import HomePageContent from '@/components/user/HomePageContent'
 
 export const metadata: Metadata = {
   title: {
-    absolute: 'BusinessTalk24 — Professional Networking Platform & Business Community',
+    absolute: 'Businesstalk24 – Knowledge Sharing & Community Platform',
   },
-  description: 'Connect with entrepreneurs, founders, and industry experts on BusinessTalk24. Share business insights, ask industry questions, and grow your professional network.',
-  keywords: 'professional networking, business networking platform, entrepreneur community, business discussion forum, startup founders network, B2B networking, business collaboration, entrepreneur knowledge sharing',
+  description: 'Businesstalk24 is a knowledge-sharing community where people and businesses connect, ask questions, share ideas, publish content and discover opportunities.',
+  keywords: 'knowledge sharing, business community, professional networking, ask questions, share ideas, publish content, discover opportunities, entrepreneur community, business Q&A',
   alternates: {
     canonical: 'https://businesstalk24.com/',
+  },
+  openGraph: {
+    title: 'Businesstalk24 – Knowledge Sharing & Community Platform',
+    description: 'Businesstalk24 is a knowledge-sharing community where people and businesses connect, ask questions, share ideas, publish content and discover opportunities.',
+    url: 'https://businesstalk24.com/',
+  },
+  twitter: {
+    title: 'Businesstalk24 – Knowledge Sharing & Community Platform',
+    description: 'Businesstalk24 is a knowledge-sharing community where people and businesses connect, ask questions, share ideas, publish content and discover opportunities.',
   },
   robots: {
     index: true,
@@ -30,9 +39,9 @@ export default function HomePage() {
     <>
       {/* 🏷️ Homepage Brand Identity, Primary H1 & Crawlable Navigation (Server-Side Rendered for Googlebot) */}
       <header className="sr-only">
-        <h1>BusinessTalk24 — Professional Networking Platform & Business Community</h1>
+        <h1>Businesstalk24 – Knowledge Sharing &amp; Community Platform</h1>
         <p>
-          Connect, collaborate, and grow your business with BusinessTalk24. Share professional insights, ask business questions, explore entrepreneurial stories, and network with verified professionals worldwide.
+          Businesstalk24 is a knowledge-sharing community where people and businesses connect, ask questions, share ideas, publish content and discover opportunities.
         </p>
         <nav aria-label="Explore Platform">
           <Link href="/questions">Business Q&A</Link>

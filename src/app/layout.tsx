@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     canonical: 'https://businesstalk24.com/',
   },
   title: {
-    default: 'BusinessTalk24 - Professional Networking Platform',
+    default: 'Businesstalk24 – Knowledge Sharing & Community Platform',
     template: '%s | BusinessTalk24',
   },
-  description: 'Connect, collaborate, and grow your business with BusinessTalk24. Share business insights, explore Q&A, and network with professionals worldwide.',
-  keywords: 'networking, business, professional, collaboration, business discussion, entrepreneurship, Q&A, business stories',
+  description: 'Businesstalk24 is a knowledge-sharing community where people and businesses connect, ask questions, share ideas, publish content and discover opportunities.',
+  keywords: 'knowledge sharing, business community, networking, business, professional, collaboration, business discussion, entrepreneurship, Q&A, business stories',
   authors: [{ name: 'BusinessTalk24' }],
   robots: {
     index: true,
@@ -46,8 +46,8 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: siteUrl,
-    title: 'BusinessTalk24 - Professional Networking Platform',
-    description: 'Connect, collaborate, and grow your business with BusinessTalk24.',
+    title: 'Businesstalk24 – Knowledge Sharing & Community Platform',
+    description: 'Businesstalk24 is a knowledge-sharing community where people and businesses connect, ask questions, share ideas, publish content and discover opportunities.',
     siteName: 'BusinessTalk24',
     images: [
       {
@@ -60,8 +60,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'BusinessTalk24 - Professional Networking Platform',
-    description: 'Connect, collaborate, and grow your business with BusinessTalk24.',
+    title: 'Businesstalk24 – Knowledge Sharing & Community Platform',
+    description: 'Businesstalk24 is a knowledge-sharing community where people and businesses connect, ask questions, share ideas, publish content and discover opportunities.',
     images: ['/assets/logos/BUSINESSTALK24_LOGO_png.png'],
   },
 }
@@ -87,14 +87,14 @@ const organizationSchema = {
         url: 'https://businesstalk24.com/assets/logos/BUSINESSTALK24_LOGO_png.png',
         caption: 'BusinessTalk24 Logo',
       },
-      description: 'BusinessTalk24 is a professional networking and business community platform to connect, collaborate, engage in business Q&A discussions, share stories, and grow your business.',
+      description: 'Businesstalk24 is a knowledge-sharing community where people and businesses connect, ask questions, share ideas, publish content and discover opportunities.',
     },
     {
       '@type': 'WebSite',
       '@id': 'https://businesstalk24.com/#website',
       url: 'https://businesstalk24.com/',
       name: 'BusinessTalk24',
-      description: 'Professional Networking Platform',
+      description: 'Businesstalk24 – Knowledge Sharing & Community Platform',
       publisher: {
         '@id': 'https://businesstalk24.com/#organization',
       },

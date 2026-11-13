@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { userSidebarSections } from '@/components/shared/UserSidebar'
 import { TrendingItem, UserCard, GroupCard } from '@/components/user/RightSidebar'
@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useRedux'
 import { logout } from '@/redux/slices/authSlice'
 import { selectTotalUnreadCount } from '@/redux/selectors/chatSelectors'
 import { selectNotificationUnreadCount } from '@/redux/selectors/notificationSelectors'
-import { FileCheck, Info, LogOut, MessageSquare, Shield, Users } from 'lucide-react'
+import { FileCheck, Info, LogOut, LogIn, MessageSquare, Shield, Users } from 'lucide-react'
 import Link from 'next/link'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 
@@ -37,9 +37,14 @@ export const MergedMobileSidebarContent = ({
   // onSeeAllGroups,
 }: Props) => {
   const pathname = usePathname()
-  const { dispatch } = useAuth()
+  const { dispatch, isAuthenticated } = useAuth()
   const router = useRouter()
   const requireAuth = useRequireAuth()
+
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const unreadMessages = useSelector(selectTotalUnreadCount)
   const unreadNotifications = useSelector(selectNotificationUnreadCount)
@@ -110,7 +115,8 @@ export const MergedMobileSidebarContent = ({
 
   const handleLogout = async () => {
     await dispatch(logout())   // wait for logout to complete
-    router.push('/login')      // redirect to login page
+    router.push('/')           // redirect to homepage per requirement 2
+    router.refresh()
   }
   
   return (
@@ -334,16 +340,29 @@ export const MergedMobileSidebarContent = ({
           </div>
         </div>
 
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm"
-          style={{ color: '#DC3545' }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8F9FA')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          <LogOut size={20} />
-          <span>Logout</span>
-        </button>
+        {mounted && isAuthenticated ? (
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm"
+            style={{ color: '#DC3545' }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8F9FA')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <LogOut size={20} />
+            <span>Logout</span>
+          </button>
+        ) : (
+          <Link
+            href="/login"
+            className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm"
+            style={{ color: '#212529' }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8F9FA')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <LogIn size={20} />
+            <span>Sign In</span>
+          </Link>
+        )}
       </div>
     </div>
   )

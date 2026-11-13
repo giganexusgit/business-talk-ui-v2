@@ -263,13 +263,10 @@ export const UserSidebar = () => {
         ) : (
           <Link
             href="/login"
-            className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm font-medium"
-            style={{
-              backgroundColor: '#E8F0FE',
-              color: '#1A73E8',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#D2E3FC')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#E8F0FE')}
+            className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm"
+            style={{ color: '#212529' }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8F9FA')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
             <LogIn size={20} />
             <span>Sign In</span>

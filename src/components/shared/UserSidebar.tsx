@@ -12,13 +12,12 @@ import {
   Bell,
   Settings,
   LogOut,
-  LogIn,
   Shield,
   FileCheck,
   Info,
   FileEdit,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { useAuth } from '@/hooks/useRedux'
 import { logout } from '@/redux/slices/authSlice'
@@ -65,11 +64,6 @@ export const UserSidebar = () => {
   const unreadMessages = useSelector(selectTotalUnreadCount)
   const unreadNotifications = useSelector(selectNotificationUnreadCount)
 
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   useEffect(() => {
     if (isAuthenticated) {
       dispatch(fetchUnreadCount())
@@ -79,8 +73,7 @@ export const UserSidebar = () => {
 
   const handleLogout = async () => {
     await dispatch(logout())   // wait for logout to complete
-    router.push('/')           // redirect to homepage
-    router.refresh()
+    router.push('/login')      // redirect to login page
   }
 
   return (
@@ -249,32 +242,16 @@ export const UserSidebar = () => {
           </div>
         </div>
 
-        {mounted && isAuthenticated ? (
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm font-medium"
-            style={{ color: '#DC3545' }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8F9FA')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <LogOut size={20} />
-            <span>Logout</span>
-          </button>
-        ) : (
-          <Link
-            href="/login"
-            className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm font-medium"
-            style={{
-              backgroundColor: '#E8F0FE',
-              color: '#1A73E8',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#D2E3FC')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#E8F0FE')}
-          >
-            <LogIn size={20} />
-            <span>Sign In</span>
-          </Link>
-        )}
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm"
+          style={{ color: '#DC3545' }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8F9FA')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        >
+          <LogOut size={20} />
+          <span>Logout</span>
+        </button>
       </nav>
     </aside>
   )

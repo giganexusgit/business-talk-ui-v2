@@ -83,8 +83,15 @@ jobs:
             echo "📋 Current PM2 status:"
             pm2 list
 
-            echo "🔄 Restarting UI via PM2..."
-            pm2 restart business-talk-ui --update-env || pm2 restart business-talk-ui-v2 --update-env || pm2 restart 1 --update-env || pm2 restart all --update-env
+            echo "🔄 Restarting UI processes via PM2..."
+            pm2 restart business-talk-frontend --update-env || pm2 restart 2 --update-env || true
+            pm2 restart business-talk-ui --update-env || pm2 restart 16 --update-env || true
+
+            echo "📋 PM2 Process 2 details:"
+            pm2 describe 2 || true
+
+            echo "📋 PM2 Process 16 details:"
+            pm2 describe 16 || true
 
             pm2 save
             echo "✅ Frontend deployment finished successfully!"

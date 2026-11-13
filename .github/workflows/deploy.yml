@@ -62,16 +62,20 @@ jobs:
 
             echo "📦 Fetching latest changes from Git..."
             git fetch --all
-            git reset --hard origin/$(git rev-parse --abbrev-ref HEAD)
+            git checkout master || git checkout -B master origin/master
+            git reset --hard origin/master
 
             echo "📥 Installing dependencies..."
             npm ci
+
+            echo "🧹 Clearing previous .next build directory..."
+            rm -rf .next
 
             echo "🔨 Building Next.js application..."
             npm run build
 
             echo "🔄 Restarting UI via PM2..."
-            pm2 restart business-talk-ui-v2 --update-env || pm2 restart 1 --update-env
+            pm2 restart business-talk-ui --update-env || pm2 restart business-talk-ui-v2 --update-env || pm2 restart all --update-env
 
             pm2 save
             echo "✅ Frontend deployment finished successfully!"

@@ -5,9 +5,11 @@ import { useSelector } from 'react-redux'
 import { userSidebarSections } from '@/components/shared/UserSidebar'
 import { TrendingItem, UserCard, GroupCard } from '@/components/user/RightSidebar'
 import { usePathname, useRouter } from 'next/navigation'
+import { useAuth } from '@/hooks/useRedux'
+import { logout } from '@/redux/slices/authSlice'
 import { selectTotalUnreadCount } from '@/redux/selectors/chatSelectors'
 import { selectNotificationUnreadCount } from '@/redux/selectors/notificationSelectors'
-import { FileCheck, Info, LogIn, MessageSquare, Shield, Users } from 'lucide-react'
+import { FileCheck, Info, LogOut, MessageSquare, Shield, Users } from 'lucide-react'
 import Link from 'next/link'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 
@@ -35,6 +37,7 @@ export const MergedMobileSidebarContent = ({
   // onSeeAllGroups,
 }: Props) => {
   const pathname = usePathname()
+  const { dispatch } = useAuth()
   const router = useRouter()
   const requireAuth = useRequireAuth()
 
@@ -103,6 +106,11 @@ export const MergedMobileSidebarContent = ({
     const id = resolveEntityId(group)
     if (!id) return
     router.push(`/groups/${id}`)
+  }
+
+  const handleLogout = async () => {
+    await dispatch(logout())   // wait for logout to complete
+    router.push('/login')      // redirect to login page
   }
   
   return (
@@ -326,16 +334,16 @@ export const MergedMobileSidebarContent = ({
           </div>
         </div>
 
-        <Link
-          href="/login"
+        <button
+          onClick={handleLogout}
           className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm"
-          style={{ color: '#212529' }}
+          style={{ color: '#DC3545' }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8F9FA')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
-          <LogIn size={20} />
-          <span>Sign In</span>
-        </Link>
+          <LogOut size={20} />
+          <span>Logout</span>
+        </button>
       </div>
     </div>
   )

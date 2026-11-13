@@ -57,6 +57,12 @@ jobs:
           port: ${{ secrets.HOSTINGER_PORT || 22 }}
           script_stop: false
           script: |
+            # Load environment paths (NVM, Node, PM2)
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            [ -s "$HOME/.bashrc" ] && source "$HOME/.bashrc"
+            export PATH=$PATH:/usr/local/bin:$HOME/.local/bin:$HOME/.npm-global/bin:$(dirname $(which node 2>/dev/null || echo ""))
+
             echo "🚀 Navigating to application directory: ${{ secrets.HOSTINGER_APP_PATH }}"
             cd ${{ secrets.HOSTINGER_APP_PATH }}
 
@@ -74,8 +80,11 @@ jobs:
             echo "🔨 Building Next.js application..."
             npm run build
 
+            echo "📋 Current PM2 status:"
+            pm2 list
+
             echo "🔄 Restarting UI via PM2..."
-            pm2 restart business-talk-ui --update-env || pm2 restart business-talk-ui-v2 --update-env || pm2 restart all --update-env
+            pm2 restart business-talk-ui --update-env || pm2 restart business-talk-ui-v2 --update-env || pm2 restart 1 --update-env || pm2 restart all --update-env
 
             pm2 save
             echo "✅ Frontend deployment finished successfully!"

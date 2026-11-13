@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import {
   Home,
   User,
@@ -11,7 +11,7 @@ import {
   BookOpen,
   Bell,
   Settings,
-  LogOut,
+  LogIn,
   Shield,
   FileCheck,
   Info,
@@ -20,7 +20,6 @@ import {
 import { useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { useAuth } from '@/hooks/useRedux'
-import { logout } from '@/redux/slices/authSlice'
 import { selectTotalUnreadCount } from '@/redux/selectors/chatSelectors'
 import { selectNotificationUnreadCount } from '@/redux/selectors/notificationSelectors'
 import { fetchUnreadCount } from '@/redux/slices/notificationsSlice'
@@ -58,7 +57,6 @@ export const userSidebarSections = [
 export const UserSidebar = () => {
   const pathname = usePathname()
   const { dispatch, isAuthenticated } = useAuth()
-  const router = useRouter()
   const requireAuth = useRequireAuth()
 
   const unreadMessages = useSelector(selectTotalUnreadCount)
@@ -70,11 +68,6 @@ export const UserSidebar = () => {
       dispatch(fetchConversations())
     }
   }, [dispatch, isAuthenticated])
-
-  const handleLogout = async () => {
-    await dispatch(logout())   // wait for logout to complete
-    router.push('/login')      // redirect to login page
-  }
 
   return (
     <aside className="hidden lg:fixed lg:left-0 lg:top-0 lg:h-screen lg:w-64 lg:flex lg:flex-col bg-white border-r overflow-y-auto" style={{ borderColor: '#E8E8E8' }}>
@@ -242,16 +235,16 @@ export const UserSidebar = () => {
           </div>
         </div>
 
-        <button
-          onClick={handleLogout}
+        <Link
+          href="/login"
           className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm"
-          style={{ color: '#DC3545' }}
+          style={{ color: '#212529' }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8F9FA')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
-          <LogOut size={20} />
-          <span>Logout</span>
-        </button>
+          <LogIn size={20} />
+          <span>Sign In</span>
+        </Link>
       </nav>
     </aside>
   )
